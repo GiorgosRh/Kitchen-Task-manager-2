@@ -368,6 +368,19 @@ body {
   cursor: pointer;
 }
 
+/* Auth error */
+.auth-error {
+  color: #c0392b;
+  font-size: 0.8rem;
+  margin-bottom: 10px;
+  padding: 7px 10px;
+  background: #fdf0ee;
+  border-radius: 6px;
+  border: 1px solid #f5c6c0;
+  display: none;
+}
+.auth-error.show { display: block; }
+
 /* Print */
 @media print {
   .menu-panel, .controls, .header { display: none; }
@@ -680,6 +693,42 @@ function save() {
   try { localStorage.setItem(KEY, JSON.stringify({workers:S.workers,tasks:S.tasks})); } catch(e){}
 }
 
+/* ══ AUTH ══ */
+const PASSWORD = 'helios';
+let isAuthenticated = false;
+let pendingAuthCallback = null;
+
+function requireAuth(cb) {
+  if (isAuthenticated) { cb(); return; }
+  pendingAuthCallback = cb;
+  document.getElementById('modal').innerHTML = `<div class="modal">
+    <h3>🔒 Απαιτείται Κωδικός</h3>
+    <p style="font-size:0.82rem;color:var(--grey);margin-bottom:12px;font-style:italic">Εισάγετε τον κωδικό πρόσβασης.</p>
+    <input class="modal-input" type="password" id="authPasswordInput" placeholder="Κωδικός..." onkeydown="if(event.key==='Enter')confirmAuth()">
+    <div class="auth-error" id="authError">Λάθος κωδικός. Δοκιμάστε ξανά.</div>
+    <div class="modal-actions">
+      <button class="modal-confirm" onclick="confirmAuth()">Είσοδος</button>
+      <button class="modal-cancel" onclick="closeModal()">Άκυρο</button>
+    </div>
+  </div>`;
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('authPasswordInput')?.focus(), 100);
+}
+
+function confirmAuth() {
+  const val = document.getElementById('authPasswordInput')?.value;
+  if (val === PASSWORD) {
+    isAuthenticated = true;
+    closeModal();
+    if (pendingAuthCallback) { const cb = pendingAuthCallback; pendingAuthCallback = null; cb(); }
+  } else {
+    const err = document.getElementById('authError');
+    if (err) err.classList.add('show');
+    const inp = document.getElementById('authPasswordInput');
+    if (inp) { inp.value = ''; inp.focus(); }
+  }
+}
+
 /* ══ MENU RENDER ══ */
 function getMenuSections() {
   if (S.service === 'breakfast') {
@@ -780,8 +829,11 @@ function submitTask(wid) {
   const inp = document.getElementById('inp-' + wid);
   const text = inp.value.trim();
   if (!text) return;
-  addTask(wid, text, '');
-  inp.value = '';
+  requireAuth(() => {
+    addTask(wid, text, '');
+    const i = document.getElementById('inp-' + wid);
+    if (i) i.value = '';
+  });
 }
 
 function addTask(wid, text, tag) {
@@ -798,19 +850,22 @@ function toggleTask(wid, tid) {
 }
 
 function deleteTask(wid, tid) {
-  S.tasks[wid] = (S.tasks[wid]||[]).filter(x => x.id !== tid);
-  save(); renderWorkers();
+  requireAuth(() => {
+    S.tasks[wid] = (S.tasks[wid]||[]).filter(x => x.id !== tid);
+    save(); renderWorkers();
+  });
 }
 
 function addToWorker(item, tag) {
-  if (!S.workers.length) { showToast('Πρόσθεσε πρώτα μέλη ομάδας!'); return; }
-  if (S.workers.length === 1) {
-    addTask(S.workers[0].id, item, tag);
-    showToast(`✓ Προστέθηκε στον/ην ${S.workers[0].name}`);
-  } else {
-    // Show picker
-    showWorkerPicker(item, tag);
-  }
+  requireAuth(() => {
+    if (!S.workers.length) { showToast('Πρόσθεσε πρώτα μέλη ομάδας!'); return; }
+    if (S.workers.length === 1) {
+      addTask(S.workers[0].id, item, tag);
+      showToast(`✓ Προστέθηκε στον/ην ${S.workers[0].name}`);
+    } else {
+      showWorkerPicker(item, tag);
+    }
+  });
 }
 
 function quickAddFromMenu(el, item, tag) {
@@ -846,11 +901,13 @@ function restoreModal() {
 }
 
 function openAddWorker() {
-  restoreModal();
-  document.getElementById('modal').classList.add('open');
-  setTimeout(() => document.getElementById('workerNameInput')?.focus(), 100);
+  requireAuth(() => {
+    restoreModal();
+    document.getElementById('modal').classList.add('open');
+    setTimeout(() => document.getElementById('workerNameInput')?.focus(), 100);
+  });
 }
-function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); pendingAuthCallback = null; }
 function confirmAddWorker() {
   const name = document.getElementById('workerNameInput')?.value?.trim();
   if (!name) return;
@@ -859,10 +916,12 @@ function confirmAddWorker() {
 }
 
 function removeWorker(wid) {
-  if (!confirm('Αφαίρεση ατόμου και όλων των εργασιών του;')) return;
-  S.workers = S.workers.filter(w => w.id !== wid);
-  delete S.tasks[wid];
-  save(); renderWorkers();
+  requireAuth(() => {
+    if (!confirm('Αφαίρεση ατόμου και όλων των εργασιών του;')) return;
+    S.workers = S.workers.filter(w => w.id !== wid);
+    delete S.tasks[wid];
+    save(); renderWorkers();
+  });
 }
 
 function clearAll() {
