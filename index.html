@@ -942,9 +942,11 @@ function removeWorker(wid) {
 }
 
 function clearAll() {
-  if (!confirm('Καθαρισμός όλων των εργασιών (οι εργαζόμενοι παραμένουν);')) return;
-  S.tasks = {};
-  save(); renderWorkers();
+  requireAuth(() => {
+    if (!confirm('Καθαρισμός όλων των εργασιών (οι εργαζόμενοι παραμένουν);')) return;
+    S.tasks = {};
+    save(); renderWorkers();
+  });
 }
 
 /* Toast */
