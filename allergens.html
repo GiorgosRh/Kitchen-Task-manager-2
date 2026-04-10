@@ -245,6 +245,23 @@ tbody tr.hidden-row { display: none; }
   font-size: 0.78rem; color: var(--text);
 }
 
+/* ── INTERACTIVE CELLS ── */
+.allergen-cell { cursor: pointer; }
+.dot-empty { width: 18px; height: 18px; border-radius: 50%; display: inline-block; transition: all 0.15s; }
+.allergen-cell:hover .dot-empty { background: rgba(255,255,255,0.08); }
+.allergen-cell:hover .dot-empty::after { content: '+'; color: rgba(255,255,255,0.3); font-size: 0.7rem; display: block; line-height: 18px; text-align: center; }
+.dot.yes { cursor: pointer; }
+.dot.yes:hover { opacity: 0.7; transform: scale(1.1); }
+
+.add-ico { cursor: pointer; transition: opacity 0.15s, transform 0.1s; }
+.add-ico:hover { transform: scale(1.2); }
+
+.a-tag { cursor: pointer; transition: opacity 0.15s; }
+.a-tag:hover { opacity: 0.7 !important; }
+
+.btn-reset { background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid rgba(255,255,255,0.1); }
+.btn-reset:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+
 /* Print */
 @media print {
   body { background: white; color: black; }
@@ -275,6 +292,8 @@ tbody tr.hidden-row { display: none; }
     </div>
   </div>
   <div class="header-right">
+    <a href="index.html" class="btn btn-ghost" style="text-decoration:none;">← Πίσω</a>
+    <button class="btn btn-ghost btn-reset" onclick="resetToDefaults()">↺ Reset</button>
     <button class="btn btn-ghost" onclick="window.print()">🖨 Εκτύπωση</button>
   </div>
 </div>
@@ -481,6 +500,44 @@ const DISHES = [
   ['Brownies', '🍮 Γλυκά', {gluten:1, dairy:1, eggs:1, nuts:1}],
 ];
 
+/* ══ EDITABLE DISH STATE ══ */
+const ALLERGEN_STORAGE_KEY = 'he_allergens_v1';
+
+let DISH_STATE = DISHES.map(([name, cat, al]) => [name, cat, {...al}]);
+
+function loadDishState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(ALLERGEN_STORAGE_KEY));
+    if (saved) {
+      DISH_STATE = DISH_STATE.map(([name, cat, al]) =>
+        [name, cat, Object.prototype.hasOwnProperty.call(saved, name) ? {...saved[name]} : al]
+      );
+    }
+  } catch(e) {}
+}
+
+function saveDishState() {
+  const data = {};
+  DISH_STATE.forEach(([name, cat, al]) => { data[name] = al; });
+  try { localStorage.setItem(ALLERGEN_STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function toggleDishAllergen(idx, key) {
+  const dish = DISH_STATE[idx];
+  if (!dish) return;
+  if (dish[2][key]) delete dish[2][key];
+  else dish[2][key] = 1;
+  saveDishState();
+  renderMain();
+}
+
+function resetToDefaults() {
+  if (!confirm('Επαναφορά όλων των αλλεργιογόνων στις αρχικές τιμές;')) return;
+  localStorage.removeItem(ALLERGEN_STORAGE_KEY);
+  DISH_STATE = DISHES.map(([name, cat, al]) => [name, cat, {...al}]);
+  renderMain();
+}
+
 /* ══ STATE ══ */
 let activeAllergens = new Set();
 let searchQ = '';
@@ -516,7 +573,7 @@ function clearFilters() {
 
 /* ══ FILTER LOGIC ══ */
 function visibleDishes() {
-  return DISHES.filter(([name, cat, allergens]) => {
+  return DISH_STATE.filter(([name, cat, allergens]) => {
     const matchSearch = !searchQ || name.toLowerCase().includes(searchQ) || cat.toLowerCase().includes(searchQ);
     const matchAllergen = activeAllergens.size === 0 || [...activeAllergens].every(k => allergens[k]);
     return matchSearch && matchAllergen;
@@ -571,7 +628,7 @@ function renderMain() {
   if (currentView === 'table') {
     el.innerHTML = renderTable();
   } else if (currentView === 'cards') {
-    el.innerHTML = `<div class="cards-grid">${DISHES.map(d => renderCard(d)).join('')}</div>`;
+    el.innerHTML = `<div class="cards-grid">${DISH_STATE.map((d, i) => renderCard(d, i)).join('')}</div>`;
   } else {
     renderAllergenView();
     return;
@@ -585,12 +642,12 @@ function renderTable() {
     `<th class="allergen-th" data-akey="${a.key}" onclick="toggleAllergen('${a.key}')" title="${a.label}">${a.ico}<br><span style="font-size:0.6rem">${a.short}</span></th>`
   ).join('');
 
-  const rows = DISHES.map(([name, cat, allergens]) => {
+  const rows = DISH_STATE.map(([name, cat, allergens], idx) => {
     const cells = ALLERGENS.map(a => {
       if (allergens[a.key]) {
-        return `<td class="allergen-cell"><div class="dot yes" style="background:${a.color}22;color:${a.color};border:1.5px solid ${a.color}" title="${a.label}">✓</div></td>`;
+        return `<td class="allergen-cell" onclick="toggleDishAllergen(${idx},'${a.key}')" title="Αφαίρεση: ${a.label}"><div class="dot yes" style="background:${a.color}22;color:${a.color};border:1.5px solid ${a.color}">✓</div></td>`;
       }
-      return `<td class="allergen-cell"><div class="dot no"></div></td>`;
+      return `<td class="allergen-cell" onclick="toggleDishAllergen(${idx},'${a.key}')" title="Προσθήκη: ${a.label}"><div class="dot-empty"></div></td>`;
     }).join('');
 
     return `<tr data-dish="${name}">
@@ -613,16 +670,26 @@ function renderTable() {
 }
 
 /* CARDS */
-function renderCard([name, cat, allergens]) {
-  const tags = ALLERGENS.filter(a => allergens[a.key]).map(a =>
-    `<div class="a-tag" style="color:${a.color};border-color:${a.color}44;background:${a.color}11">${a.ico} ${a.label}</div>`
+function renderCard([name, cat, allergens], idx) {
+  const activeTags = ALLERGENS.filter(a => allergens[a.key]).map(a =>
+    `<div class="a-tag" onclick="toggleDishAllergen(${idx},'${a.key}')"
+      style="color:${a.color};border-color:${a.color}44;background:${a.color}11"
+      title="Αφαίρεση: ${a.label}">${a.ico} ${a.label} ×</div>`
+  ).join('');
+
+  const inactiveIcos = ALLERGENS.filter(a => !allergens[a.key]).map(a =>
+    `<span class="add-ico" onclick="toggleDishAllergen(${idx},'${a.key}')"
+      title="Προσθήκη: ${a.label}" style="opacity:0.22;font-size:0.85rem;">${a.ico}</span>`
   ).join('');
 
   return `<div class="dish-card" data-dish="${name}">
     <div class="card-name">${name}</div>
     <div class="card-cat">${cat}</div>
     <div class="card-allergens">
-      ${tags || '<span class="no-allergens">Χωρίς γνωστά αλλεργιογόνα</span>'}
+      ${activeTags || '<span class="no-allergens">Χωρίς γνωστά αλλεργιογόνα</span>'}
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.06);">
+      ${inactiveIcos}
     </div>
   </div>`;
 }
@@ -651,9 +718,10 @@ function renderAllergenView() {
 }
 
 /* ══ INIT ══ */
+loadDishState();
 renderLegend();
 renderMain();
-updateStats(DISHES.length);
+updateStats(DISH_STATE.length);
 </script>
 </body>
 </html>
