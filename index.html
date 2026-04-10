@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Helios & Ella — Μενού & Εργασίες</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f4efe6;
+  --bg2: #ede6d8;
+  --paper: #faf7f2;
+  --dark: #1e2a1a;
+  --olive: #3d5a2e;
+  --olive2: #4e7040;
+  --gold: #b8860b;
+  --terra: #a0522d;
+  --grey: #7a7060;
+  --line: #d9d0c0;
+  --white: #ffffff;
+  --green-soft: #e8f0e4;
+  --done-bg: #e8f5e0;
+  --done-line: #a0c88a;
+  --shadow: 0 2px 16px rgba(30,42,26,0.08);
+  --radius: 12px;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--dark);
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--dark);
+  padding: 16px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 3px solid var(--gold);
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-icon { font-size: 22px; }
+.brand h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem; font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.03em;
+}
+.brand p { font-size: 0.68rem; color: rgba(255,255,255,0.4); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 1px; }
+
+.header-actions { display: flex; gap: 8px; align-items: center; }
+.btn-sm {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem; font-weight: 600;
+  padding: 7px 14px; border-radius: 8px; cursor: pointer; border: none;
+  transition: all 0.15s;
+}
+.btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); }
+.btn-outline:hover { background: rgba(255,255,255,0.07); color: white; }
+.btn-gold { background: var(--gold); color: white; }
+.btn-gold:hover { filter: brightness(1.1); }
+
+/* ── CONTROLS ── */
+.controls {
+  background: var(--dark);
+  padding: 0 24px 14px;
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+}
+
+.pill-group { display: flex; gap: 3px; background: rgba(255,255,255,0.06); padding: 3px; border-radius: 9px; }
+.pill {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem; font-weight: 600;
+  padding: 5px 12px; border: none; border-radius: 7px;
+  background: transparent; color: rgba(255,255,255,0.45); cursor: pointer;
+  transition: all 0.15s; white-space: nowrap;
+}
+.pill:hover { color: rgba(255,255,255,0.8); }
+.pill.active { background: var(--olive); color: white; }
+.pill.active.bf { background: #c17f24; }
+.pill.active.lunch { background: #3d7a4e; }
+.pill.active.dinner { background: #5a3d7a; }
+
+.sep { width: 1px; height: 24px; background: rgba(255,255,255,0.08); }
+
+.theme-tag {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.82rem; font-style: italic; color: var(--gold);
+  opacity: 0; transition: opacity 0.3s;
+}
+.theme-tag.show { opacity: 1; }
+
+/* ── LAYOUT ── */
+.layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 0;
+  height: calc(100vh - 100px);
+}
+
+/* ── LEFT: MENU PANEL ── */
+.menu-panel {
+  background: var(--paper);
+  border-right: 2px solid var(--line);
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.menu-panel::-webkit-scrollbar { width: 4px; }
+.menu-panel::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+
+.menu-panel-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px;
+}
+.menu-panel-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem; font-weight: 700; color: var(--olive);
+}
+
+.search-box {
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  padding: 7px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  margin-bottom: 14px;
+  color: var(--dark);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.search-box:focus { border-color: var(--olive2); }
+.search-box::placeholder { color: #bbb; }
+
+/* Station block */
+.station-block { margin-bottom: 14px; }
+.station-title {
+  font-size: 0.68rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--grey);
+  padding: 6px 0 4px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.station-title .sico { font-size: 0.9rem; }
+
+.menu-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 5px 6px; border-radius: 6px;
+  cursor: pointer; transition: background 0.12s;
+  border: 1.5px solid transparent;
+}
+.menu-item:hover { background: var(--green-soft); }
+.menu-item.selected { background: #e6f0e0; border-color: var(--olive2); }
+
+.item-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--olive2); margin-top: 5px; flex-shrink: 0; }
+.item-name { font-size: 0.84rem; color: var(--dark); line-height: 1.4; flex: 1; }
+.item-add-btn {
+  font-size: 0.72rem; font-weight: 600; color: var(--olive);
+  background: none; border: 1px solid var(--olive2);
+  padding: 2px 7px; border-radius: 5px; cursor: pointer; white-space: nowrap;
+  opacity: 0; transition: opacity 0.12s;
+}
+.menu-item:hover .item-add-btn { opacity: 1; }
+.item-add-btn:hover { background: var(--olive); color: white; }
+
+/* ── RIGHT: TASKS PANEL ── */
+.tasks-panel {
+  overflow-y: auto;
+  padding: 20px 24px;
+  background: var(--bg);
+}
+
+.tasks-panel::-webkit-scrollbar { width: 4px; }
+.tasks-panel::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+
+.tasks-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 18px;
+}
+.tasks-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem; font-weight: 700; color: var(--dark);
+}
+.add-worker-btn {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem; font-weight: 600;
+  color: var(--olive); background: white;
+  border: 1.5px solid var(--olive2);
+  padding: 7px 14px; border-radius: 8px; cursor: pointer;
+  transition: all 0.15s;
+}
+.add-worker-btn:hover { background: var(--olive); color: white; }
+
+/* Workers grid */
+.workers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+/* Worker card */
+.worker-card {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  border: 1.5px solid var(--line);
+}
+
+.worker-card-header {
+  padding: 12px 16px;
+  background: var(--olive);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.worker-card-header .worker-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.95rem; font-weight: 600; color: white;
+  display: flex; align-items: center; gap: 8px;
+}
+.worker-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 700; color: white;
+}
+.worker-header-right { display: flex; gap: 6px; align-items: center; }
+.worker-progress-text { font-size: 0.72rem; color: rgba(255,255,255,0.7); }
+.remove-worker-btn { background: none; border: none; color: rgba(255,255,255,0.4); font-size: 0.9rem; cursor: pointer; padding: 2px 4px; }
+.remove-worker-btn:hover { color: white; }
+
+.worker-tasks-list { padding: 8px 12px; min-height: 48px; }
+
+.task-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 6px 4px; border-bottom: 1px solid #f0ebe0;
+  animation: slideIn 0.2s ease;
+}
+.task-item:last-child { border-bottom: none; }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.task-check {
+  width: 18px; height: 18px; border: 2px solid var(--line);
+  border-radius: 4px; cursor: pointer; flex-shrink: 0; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; background: white;
+}
+.task-check:hover { border-color: var(--olive2); }
+.task-check.checked { background: var(--olive2); border-color: var(--olive2); }
+.task-check.checked::after { content: '✓'; color: white; font-size: 10px; font-weight: 700; }
+
+.task-text { flex: 1; font-size: 0.84rem; line-height: 1.4; color: var(--dark); }
+.task-text.done { text-decoration: line-through; color: #aaa; }
+
+.task-tag {
+  font-size: 0.68rem; font-weight: 600; padding: 1px 6px;
+  border-radius: 4px; background: var(--green-soft); color: var(--olive2);
+  white-space: nowrap; flex-shrink: 0; margin-top: 2px;
+}
+
+.task-del { background: none; border: none; color: #ccc; font-size: 0.8rem; cursor: pointer; padding: 0 2px; flex-shrink: 0; }
+.task-del:hover { color: var(--terra); }
+
+/* Add task row */
+.add-task-row {
+  padding: 8px 12px 10px;
+  border-top: 1px dashed var(--line);
+}
+.add-task-input-wrap { display: flex; gap: 6px; }
+.add-task-input {
+  flex: 1;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  padding: 7px 10px; border: 1.5px solid var(--line);
+  border-radius: 7px; background: var(--bg);
+  color: var(--dark); outline: none; transition: border-color 0.15s;
+}
+.add-task-input:focus { border-color: var(--olive2); background: white; }
+.add-task-input::placeholder { color: #bbb; }
+.add-task-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem; font-weight: 700;
+  background: var(--olive); color: white;
+  border: none; border-radius: 7px; padding: 7px 12px;
+  cursor: pointer; white-space: nowrap; transition: all 0.15s;
+}
+.add-task-btn:hover { background: var(--olive2); }
+
+/* Empty workers */
+.empty-workers {
+  grid-column: span 3;
+  text-align: center; padding: 48px 20px;
+  color: var(--grey);
+}
+.empty-workers h3 { font-family: 'Playfair Display', serif; font-size: 1.1rem; margin-bottom: 8px; color: var(--dark); }
+.empty-workers p { font-size: 0.85rem; }
+
+/* Quick-add toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--dark); color: white;
+  padding: 10px 18px; border-radius: 8px;
+  font-size: 0.82rem; font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  opacity: 0; transition: opacity 0.3s;
+  pointer-events: none; z-index: 999;
+}
+.toast.show { opacity: 1; }
+
+/* Worker color variants */
+.wc0 { background: #3d5a2e; }
+.wc1 { background: #5a3d2e; }
+.wc2 { background: #2e3d5a; }
+.wc3 { background: #5a2e3d; }
+.wc4 { background: #2e5a4a; }
+.wc5 { background: #4a2e5a; }
+.wc6 { background: #5a4a2e; }
+.wc7 { background: #2e4a5a; }
+
+/* Add worker modal */
+.modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45); z-index: 200;
+  align-items: center; justify-content: center;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: white; border-radius: var(--radius);
+  padding: 24px; width: 340px; max-width: 92vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.modal h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem; color: var(--dark); margin-bottom: 14px;
+}
+.modal-input {
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  padding: 10px 12px; border: 1.5px solid var(--line);
+  border-radius: 8px; margin-bottom: 10px;
+  outline: none; color: var(--dark);
+}
+.modal-input:focus { border-color: var(--olive2); }
+.modal-actions { display: flex; gap: 8px; }
+.modal-confirm {
+  flex: 1; background: var(--olive); color: white;
+  border: none; border-radius: 8px; padding: 9px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 700;
+  cursor: pointer;
+}
+.modal-cancel {
+  background: var(--bg2); color: var(--grey);
+  border: none; border-radius: 8px; padding: 9px 14px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600;
+  cursor: pointer;
+}
+
+/* Print */
+@media print {
+  .menu-panel, .controls, .header { display: none; }
+  .layout { display: block; height: auto; }
+  .tasks-panel { padding: 0; }
+  .workers-grid { grid-template-columns: repeat(2, 1fr); }
+  .worker-card { page-break-inside: avoid; }
+  .add-task-row, .task-del, .remove-worker-btn, .add-worker-btn, .tasks-header button { display: none; }
+}
+
+@media (max-width: 800px) {
+  .layout { grid-template-columns: 1fr; height: auto; }
+  .menu-panel { height: 340px; border-right: none; border-bottom: 2px solid var(--line); }
+  .tasks-panel { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="brand">
+    <div class="brand-icon">☀️</div>
+    <div>
+      <h1>Helios &amp; Ella</h1>
+      <p>Μενού &amp; Καθημερινές Εργασίες</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn-sm btn-outline" onclick="window.print()">🖨 Εκτύπωση</button>
+    <button class="btn-sm btn-outline" onclick="clearAll()">↺ Καθαρισμός</button>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <div class="pill-group" id="dayPills"></div>
+  <div class="sep"></div>
+  <div class="pill-group" id="svcPills"></div>
+  <div class="theme-tag" id="themeTag"></div>
+</div>
+
+<!-- Layout -->
+<div class="layout">
+  <!-- LEFT: Menu -->
+  <div class="menu-panel">
+    <div class="menu-panel-header">
+      <div class="menu-panel-title">📋 Μενού Ημέρας</div>
+    </div>
+    <input class="search-box" type="text" placeholder="🔍 Αναζήτηση πιάτου..." oninput="filterMenu(this.value)" id="searchBox">
+    <div id="menuContent"></div>
+  </div>
+
+  <!-- RIGHT: Tasks -->
+  <div class="tasks-panel">
+    <div class="tasks-header">
+      <div class="tasks-title">👥 Ομάδα &amp; Εργασίες</div>
+      <button class="add-worker-btn" onclick="openAddWorker()">+ Προσθήκη Ατόμου</button>
+    </div>
+    <div class="workers-grid" id="workersGrid"></div>
+  </div>
+</div>
+
+<!-- Add Worker Modal -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3>👤 Νέο Μέλος Ομάδας</h3>
+    <input class="modal-input" type="text" id="workerNameInput" placeholder="Όνομα..." onkeydown="if(event.key==='Enter')confirmAddWorker()">
+    <div class="modal-actions">
+      <button class="modal-confirm" onclick="confirmAddWorker()">Προσθήκη</button>
+      <button class="modal-cancel" onclick="closeModal()">Άκυρο</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══ DATA ══ */
+const DAYS = [
+  {key:'mon',short:'ΔΕΥ',full:'Δευτέρα'},
+  {key:'tue',short:'ΤΡΙ',full:'Τρίτη'},
+  {key:'wed',short:'ΤΕΤ',full:'Τετάρτη'},
+  {key:'thu',short:'ΠΕΜ',full:'Πέμπτη'},
+  {key:'fri',short:'ΠΑΡ',full:'Παρασκευή'},
+  {key:'sat',short:'ΣΑΒ',full:'Σάββατο'},
+  {key:'sun',short:'ΚΥΡ',full:'Κυριακή'},
+];
+
+const DINNER_THEME = {mon:'🇬🇷 Greek Buffet',tue:'🌎 South American',wed:'🌍 International',thu:'🥢 Asian',fri:'🔥 BBQ',sat:'🏛 Rhodian',sun:'🇮🇹 Italian'};
+
+/* ── MENU DATA (simplified sections per day/service) ── */
+const MENU = {
+  breakfast: {
+    _all: {
+      '🍉 Φρούτα Entrance': ['Watermelon','Melon','Seasonal Fruit','Tropical Pineapple','Orange','Grapefruit'],
+      '🍎 Whole Fruits': ['Granny Smith Apple','Banana','Seasonal Fruits x4'],
+      '🥣 Γιαούρτια & Δημητριακά': ['Vanilla Yogurt','Natural Yogurt','Strawberry Yogurt','Greek Yogurt','Quark','Red Fruit Compote','Muesli','Homemade Granola','Oats','Cornflakes','Chocolate Cereals','Honey Puffed Wheat'],
+      '🥛 Milk Bar': ['Whole Milk','Skim Milk','Lactose-Free Milk','Oat Milk'],
+      '🧀 Αλλαντικά & Τυριά': ['Ham','Cooked Turkey','Salami','Dry Sausage','Chorizo','Sliced Gouda','Sliced Masdammer','Sliced Fresh Cheese','Local Hard Cheese x2','Blue Cheese','Serrano Ham'],
+      '🫙 Σάλτσες & Spreads': ['Pâté','Pickles','Vegan Mayo','Tomato Spread','Hummus','Beet Hummus','Guacamole'],
+      '🍞 Αρτοποιείο': ['White Bread','Poppy Seed','Sesame','Wholemeal','Multigrain','Rustic Loaf','Baguette','Cereal Loaf','Pumpkin Bread','Raisin Bread'],
+      '🍳 Hot Items': ['Scrambled Eggs','Red Sausage','White Sausage','Cocktail Sausages','Bacon','Hash Browns','White Beans','Fried Eggs','Omelette','Ham & Cheese Omelette','Sautéed Vegetables','Grilled Tomatoes','Churros','Boiled Eggs','Pancakes','Vegan Pancakes','Porridge'],
+      '🥐 Ζαχαροπλαστείο': ['Croissants','Cream-Filled Pastries','Chocolate Donuts','Local Pastries','Mini Muffins'],
+      '🌿 Allergen-Free': ['GF Cereals','GF Muesli','GF Cookies','GF Muffins','GF Bread','Lactose-Free Milk','Soy Yogurt','Almond Milk','Rice Milk'],
+    }
+  },
+  lunch: {
+    _std: {
+      '🍞 Bread Station': ['White Baguette','Whole Meal Vienna','Brown Polysporo Loaf','Brown Mini Baguette','White Mini Baguette','White Rolls','Paparounosporos Rolls','Knäckebröd'],
+      '🥗 Plain Salads': ['Lettuce/Rosso/Rucola','Iceberg/Rocca/Lola Rossa','White-Red Beans/Chick Peas/Lentils','Sliced Cucumber','Three Peppers','Tomato Wedges','Shredded Carrots','Sweet Corn','Onions'],
+      '🫙 Dressings': ['Balsamico','Olive Oils','Lemon/Ginger','Aioli','Caesar','Blue Cheese','Vinaigrette','Honey Mustard','Yogurt','Butter','Margarine','Hummus','Black & Green Olives Paste'],
+      '🫒 Appetizers': ['Black Olives','Green Olives','Capers','Red Sweet Peppers','Pickled Vegetables','Pickled Cucumber','Artichokes','Dried Tomatoes','Dried Fruits','Nuts','Compote Fruits'],
+      '🍋 Fruits': ['Apples','Watermelon','Melon','Cherries','Pineapple','Nectarines','Grapes','Plums','Bananas','Kiwi','Oranges'],
+    },
+    mon: {
+      '🥗 Salads': ['Groats, Quinoa, Pomegranate & Herbs','Noodles Salad w Chicken','Greek Salad','Chicken Salad w Cabbage','Salad Mix Dry Nuts & Manouri','Tzatziki'],
+      '🍕 Pizza': ['Pizza w Bacon','Pizza Margarita'],
+      '🍝 Pasta': ['Bolognese','Napolitana','Spaghetti','Penne','Pasta Boscaiola','Pasta w Chicken "Shioufikto"','Pasta w Vegetables'],
+      '🥩 Κρέατα': ['Chicken "TIGANIA"','Kebab Giaourtlou','Greek Lemon Pork Stew'],
+      '🐟 Ψάρια': ['Pie w Salmon & Roquefort','Perch w Vegetables'],
+      '🔥 Action': ['Brisket / Pepper Sauce'],
+      '♨️ Grill': ['Chicken Fillet'],
+      '🥦 Vegetarian': ['Mushroom Pie','Gemista Greek Stuffed Vegetables','Roasted Potato w Herbs','Greek Stuffed Vine Leaves'],
+      '🍲 Σούπα': ['Minestrone Soup'],
+      '🍮 Desserts': ['Mousse','Jelly','Cakes','Small Pastries','Small Tartes','Chocolate Pie','Panna Cotta','Cheese Cake Caramel','Refrigerator Sweet','Cake Sinek','Monde'],
+    },
+    tue: {
+      '🥗 Salads': ['Potato Salad w Chicken','Fresh Peas Salad w Vegetables','Grilled Peppers Salad w Mango','Seafood Salad','Greek Salad','Tzatziki'],
+      '🍕 Pizza': ['Pizza w Pineapple & Cheese','Pizza Margarita'],
+      '🍝 Pasta': ['Bolognese','Napolitana','Spaghetti','Farfalle','Pasta Seafood'],
+      '🥩 Κρέατα': ['Pork a la Creme','Chicken Drumstick BBQ Sauce','Soutzoukakia','Pastitsio'],
+      '🐟 Ψάρια': ['Cod Plaki','Shrimps Noodles'],
+      '🔥 Action': ['Roasted Turkey / Mediterranean Sauce'],
+      '♨️ Grill': ['Beef'],
+      '🥦 Vegetarian': ['Artichokes Alla Polita','Aubergines w Tomato Feta & Walnuts','Baby Potato w Onions','Zucchini Pie'],
+      '🍲 Σούπα': ['Meat Soup'],
+      '🍮 Desserts': ['Mousse','Jelly','Cakes','Small Pastries','Chocolate Pie','Panna Cotta','Babadakia','Cheese Cake Nutella','Monde'],
+    },
+    wed: {
+      '🥗 Salads': ['Lentils & Bean Sprouts Salad','Greek Salad','Potato Salad w Tuna','Meli Melo Salad w Walnuts & Parmesan','Tomato Mozzarella & Pesto','Tzatziki'],
+      '🍕 Pizza': ['Pizza Capricciosa','Pizza Margarita'],
+      '🍝 Pasta': ['Bolognese','Napolitana','Spaghetti','Penne','Pasta 4 Cheese'],
+      '🥩 Κρέατα': ['Chicken Meat Loaf','Oven Baked Lamb','Chicken Meat Balls'],
+      '🐟 Ψάρια': ['Swordfish Lemon Sauce','Calamares "Stifado"'],
+      '🔥 Action': ['Chicken Burrito'],
+      '♨️ Grill': ['Pancetta'],
+      '🥦 Vegetarian': ['Cheese Pie','Sweet Peppers w Feta & Balsamic','Greek Giant Beans-Gigantes','Fried Vegetables Balls'],
+      '🍲 Σούπα': ['Hot & Sour Soup'],
+      '🍮 Desserts': ['Mousse','Jelly','Cakes','Small Cornes','Cheese Cake Peanuts','Fruit Tarte','Monde'],
+    },
+    thu: {
+      '🥗 Salads': ['Wild Rice w Chicken & Vegetables','Rocket Parmesan Cherry Tomatoes','Greek Salad','Pesto Pasta Salad','Seafood Salad','Tzatziki'],
+      '🍕 Pizza': ['Pizza Salami','Pizza Margarita'],
+      '🍝 Pasta': ['Bolognese','Napolitana','Spaghetti','Penne','Pasta Amatriciana'],
+      '🥩 Κρέατα': ['Stew Beef w Rosemary','Chicken "LEMONATO"','Sausages "SPETSOFAI"'],
+      '🐟 Ψάρια': ['Fish Spetsiota','Greek Mussels Saganaki'],
+      '🔥 Action': ['Hot Dog'],
+      '♨️ Grill': ['Kebab'],
+      '🥦 Vegetarian': ['Lahanorizo Greek Cabbage w Rice','Fried Vegetables','Wedges Cheddar Creamy','Zucchini Stew'],
+      '🍲 Σούπα': ['Lobster Soup'],
+      '🍮 Desserts': ['Mousse','Jelly','Cakes','Cheese Cake Oreo','Caramel Tarte','Cake Sinek','Monde'],
+    },
+    fri: {
+      '🥗 Salads': ['Caesar Salad','Green Salad w Blue Cheese','Greek Black Eyed Peas Salad','Potato Salad','Greek Salad','Tzatziki'],
+      '🍕 Pizza': ['Pizza Hawaii','Pizza Margarita'],
+      '🍝 Pasta': ['Bolognese','Napolitana','Spaghetti','Penne','Pasta All Fredo w Mushrooms'],
+      '🥩 Κρέατα': ['Roasted Pancetta','Chicken Tika Masala','Gyros'],
+      '🐟 Ψάρια': ['Fried Sole Fish','Sea Food Stifado'],
+      '🔥 Action': ['Roasted Chicken / Gravy Sauce'],
+      '♨️ Grill': ['Chicken'],
+      '🥦 Vegetarian': ['Spinach Pie','Cheese Balls','Mac N Cheese Au Gratin','Chickpeas w Spinach & Saffron'],
+      '🍲 Σούπα': ['Chicken Soup'],
+      '🍮 Desserts': ['Mousse','Jelly','Cakes','White Chocolate Cake','Two Colors Brownies','Cream Tarte','Monde'],
+    },
+    sat: {
+      '🥗 Salads': ['Green Salad w Avocado & Shrimps','Pasta Salad w Blue Cheese','Quinoa w Grilled Vegetables','Greek Salad','Beetroot Salad w Yogurt','Tzatziki'],
+      '🍕 Pizza': ['Pizza Peperoni','Pizza Margarita'],
+      '🍝 Pasta': ['Bolognese','Napolitana','Spaghetti','Penne','Pasta w Tuna'],
+      '🥩 Κρέατα': ['Meatballs w Tomato Sauce','Beef Hoisin','Roasted Lamb Meat Loaf','Moussaka'],
+      '🐟 Ψάρια': ['Fish w Curry & Vegetables','Fish Fingers'],
+      '🔥 Action': ['Hamburger'],
+      '♨️ Grill': ['Pork Meat'],
+      '🥦 Vegetarian': ['Baby Potato w Herbs de Provence','Green Beans Stew','Onion Rings'],
+      '🍲 Σούπα': ['Mushrooms Soup'],
+      '🍮 Desserts': ['Mousse','Jelly','Cakes','Refrigerator Sweet','Millefeuille','Cake Sinek','Monde'],
+    },
+    sun: {
+      '🥗 Salads': ['Pasta w Salmon Salad','Chef Salad','Greek Salad','Sweet Corn Salad w Vegetables','Mexican Salad','Tzatziki'],
+      '🍕 Pizza': ['Pizza Ham & Mushrooms','Pizza Margarita'],
+      '🍝 Pasta': ['Bolognese','Napolitana','Spaghetti','Farfalle','Puncinella Pasta (Bacon, Zucchini, Cream)'],
+      '🥩 Κρέατα': ['Chicken Wings w BBQ Sauce','Beef w Pasta "Kritharaki"','Chicken Curry Stew'],
+      '🐟 Ψάρια': ['Fish w Espanol Sauce','Fried Calamari'],
+      '🔥 Action': ['Roasted Pork Loin w Black Bean Garlic Sauce'],
+      '♨️ Grill': ['Sheftalia Cypriot Pork Sausage'],
+      '🥦 Vegetarian': ['Fresh Peas w Lemon Sauce','Spring Rolls Sweet Chilli','Potato Croquettes Garlic Mayo','Spanakorizo'],
+      '🍲 Σούπα': ['Creamy Vegetables Soup'],
+      '🍮 Desserts': ['Mousse','Jelly','Cakes','Kokakia','Biscuit Bar','Fruit Cake','Monde'],
+    },
+  },
+  dinner: {
+    _std: {
+      '🍞 Bread Station': ['White Baguette','Whole Meal Vienna','Brown Polysporo Loaf','Brown Mini Baguette','White Mini Baguette','White Rolls','Paparounosporos Rolls','Knäckebröd'],
+      '🥗 Plain Salads': ['Lettuce/Rosso/Rucola','Iceberg/Rocca/Lola Rossa','Beans/Chick Peas/Lentils','Sliced Cucumber','Three Peppers','Tomato Wedges','Shredded Carrots','Sweet Corn','Onions'],
+      '🫙 Dressings & Spreads': ['Balsamico','Olive Oils','Lemon/Ginger','Aioli','Caesar','Blue Cheese','Vinaigrette','Honey Mustard','Yogurt','Butter','Margarine','Hummus','Black & Green Olives Paste'],
+      '🫒 Appetizers Station': ['Black Olives','Green Olives','Capers','Red Sweet Peppers','Pickled Vegetables','Pickled Cucumber','Artichokes','Dried Tomatoes','Dried Fruits','Nuts','Compote Fruits'],
+      '🌿 Herbs': ['Ground Black Pepper','Onion Powder','Ground White Pepper','Cayenne','Dried Onion Flakes','Mint','Oregano'],
+      '🧀 Cheese & Antipasti': ['Blue Cheese','Parmegiano','Edam Cheese','Gouda Cheese','Salami','Turkey','Ham'],
+      '🍋 Fruits': ['Apples','Watermelon','Melon','Cherries','Pineapple','Nectarines','Grapes','Plums'],
+    },
+    mon: {
+      '🥗 Greek Salads': ['Greek Potato Salad (olives, orange)','Beetroot w Yogurt Salad','Tirokafteri','Melitzanosalata','Greek Cretan Dakos (ACTION)','Greek Cabbage Salad-Politiki','Greek Salad','Tzatziki'],
+      '🍕 Pizza': ['Pizza w Bacon','Pizza Margarita'],
+      '🍝 Pasta': ['Bolognese','Napolitana','Spaghetti','Penne','Pasta w Chicken "Shioufikto"','Pasta w Vegetables','Kritharoto w Chicken'],
+      '🥩 Κρέατα': ['Oven Baked Lamb','Pork "Tigania"','Stew Beef "Stifado"','Moussaka'],
+      '🐟 Ψάρια': ['Spetsiota Fish','Shrimps Saganaki','Fried Fish'],
+      '🥦 Vegetarian': ['Chickpeas w Tomato & Vegetables','Zucchini Balls','Briam Greek Stew','Green Beans Stew','Spinach Pie'],
+      '🍟 Garnish': ['Oven Potatoes w Lemon & Cumin','French Fries','Pitta Bread','Feta Cheese w Honey','Rice w Kritharaki'],
+      '🔥 Action Grill': ['Souvlaki','Greek Village Sausages','Grilled Peppers'],
+      '🍲 Σούπα': ['Fish Soup'],
+    },
+    tue: {
+      '🥗 South American Salads': ['Chili Chicken Salad','Peruvian Quinoa Salad (Solterito)','Potato Salad w Ham & Pineapple','Mexican Salad','Greek Salad','Tzatziki'],
+      '🍕 Pizza': ['Pizza w Ham & Bacon','Pizza Margarita'],
+      '🍝 Pasta': ['Bolognese (Creamy Guanciale Zucchini)','Napolitana','Spaghetti','Penne','Creamy Pasta w Bacon & Broccoli'],
+      '🥩 Κρέατα': ['Crispy Cajun Chicken','Chicken Poblano','Beef Lomo Saltado / Barbacoa','Caramelized Pancetta','Chilli Con Carne'],
+      '🐟 Ψάρια': ['Fish Moqueca','Cajun Shrimps','Salmon w Chimichurri'],
+      '🥦 Vegetarian': ['Broccoli Au Gratin','Empanadas','Wedges w Cajun & Cheddar','Zucchini Stew w Tomato Saffron','Quesadillas w Vegetables'],
+      '🍟 Garnish': ['Nachos','Burritos','Mexican Rice','Fried Tortillas','French Fries'],
+      '🔥 Action Grill': ['Chicken','Chorizo Sausages','Pulled Beef'],
+      '🍲 Σούπα': ['Pozole Soup (Pork, Vegetables, Kidney Beans)'],
+    },
+    wed: {
+      '🥗 International Salads': ['Waldorf Salad','White Bean Salad','Nisuaz Salad','Aubergine Salad (Baba Ganoush)','Greek Salad','Tzatziki'],
+      '🍕 Pizza': ['Pizza Capricciosa','Pizza Margarita'],
+      '🍝 Pasta': ['Bolognese (Creamy Fennel & Smoked Salmon)','Napolitana','Spaghetti','Penne','Gnocchi Amatriciana & Ricotta'],
+      '🥩 Κρέατα': ['Creamy Chicken Enchiladas','Sofrito Veal','Pork Kontosouvli','Chicken Drumsticks w Sweet Chilli & Lemongrass'],
+      '🐟 Ψάρια': ['Baked Fish w Lemon Sauce','Baked Fish w Curry & Dried Nuts','Shrimps & Mussels Saganaki w Feta'],
+      '🥦 Vegetarian': ['Cauliflower Ragout-Kapama w Graviera','Imam Bayildi','Fresh Peas Stew','Baby Potatoes w Dill','Lasagna w Vegetables'],
+      '🍟 Garnish': ['Rice w Tomatoes & Aubergines','Carrot Puree','Samosa w Vegetables','French Fries','Steamed Brussels & Sweet Corn'],
+      '🔥 Action Grill': ['Kebab','Chicken/Pork Neck Peruvian Spices','Pork Gyros'],
+      '🍲 Σούπα': ['Pumpkin Soup'],
+    },
+    thu: {
+      '🥗 Asian Salads': ['Japanese Caesar Salad','Wakame Salad','Thai Noodles Salad','Shrimp & Mango Salad','Crab Salad','Greek Salad','Tzatziki'],
+      '🍕 Pizza': ['Pizza Salami','Pizza Margarita'],
+      '🍝 Pasta': ['Bolognese','Napolitana','Spaghetti','Penne','Noodles w Chicken'],
+      '🥩 Κρέατα': ['Mongolian Beef','Sweet & Sour Chicken','Chicken Wings w Teriyaki','Moo Shu Pork','Korean Pork'],
+      '🐟 Ψάρια': ['Salmon w Teriyaki Sauce','Cod w Tomato Miso Sauce','Curry Shrimps / Thai Stew'],
+      '🥦 Vegetarian': ['Veggies Chop Suey','Spring Rolls','Stir-Fried Rice','Potato Curry Stew','Miso-Glazed Carrots','Pineapples w Sweet Chilli'],
+      '🍟 Garnish': ['Basmati Rice','Prawn Crackers','Dumplings','French Fries','Stir Fry Baby Corn'],
+      '🔥 Action Grill': ['Vietnamese Style Duck','Chicken Satay Skewers','Noodles w Vegetables'],
+      '🍲 Σούπα': ['Thai Coconut Soup (Tom Kha Gai)'],
+    },
+    fri: {
+      '🥗 BBQ Salads': ['Coleslaw Salad','Potato Salad w Sausages','Chickpeas Salad','Green Beans Salad','Greek Salad','Tzatziki'],
+      '🍕 Pizza': ['Pizza w Vegetables','Pizza Margarita'],
+      '🍝 Pasta': ['Bolognese (Boscaiola)','Napolitana','Spaghetti','Penne','Lobster Pasta','Mac & Cheese'],
+      '🥩 Κρέατα': ['Chicken Kentucky','BBQ Spare Ribs','Roasted Turkey Meat Loaf','Pork Loin w Tomato & Unagi Garlic'],
+      '🐟 Ψάρια': ['Grilled Fish','Perch w Green Mojo Sauce','Squid Stew w Vegetables'],
+      '🥦 Vegetarian': ['Grilled Sweet Corn','Sweet Potatoes w Caramelized Chickpeas','Cauliflower w Curry & Bacon','Dollar Potatoes','Stew Mushrooms'],
+      '🍟 Garnish': ['Rice w Sweet Corn & Red Pepper','Corn Tacos','Wheat Tortilla','French Fries','Steamed Carrots'],
+      '🔥 Action Grill': ['Ribeye','Pork','Roasted Pork Leg'],
+      '🍲 Σούπα': ['Onion Soup'],
+    },
+    sat: {
+      '🥗 Rhodian Salads': ['Seafood Mix Salad','Cheese Salad','Green Salad','Lentil Salad','Greek Salad','Florina Red Peppers','Tzatziki'],
+      '🍕 Pizza': ['Pizza Hawaii','Pizza Margarita'],
+      '🍝 Pasta': ['Bolognese','Napolitana','Spaghetti','Penne','Creamy w Spinach & Walnuts','Pastitsio','Pasta w Sea Food'],
+      '🥩 Κρέατα': ['Chicken Kontosouvli','Lamb Lakani','Pork Bekri Meze w Graviera','Soutzoukakia'],
+      '🐟 Ψάρια': ['Savoro Fish','Calamares Tempura','Fish w Vegetables'],
+      '🥦 Vegetarian': ['Cheese Pie','Stuffed Vine Leaves','Pitaroudia','Aubergines w Pomegranate','Giant Beans w Spinach & Mushrooms','Roasted Potatoes w Rhodian Herbs'],
+      '🍟 Garnish': ['Feta Cheese "Bougiourdi"','Ladopita','Rice w Mince & Pinecone','Sautéed Green Beans','French Fries'],
+      '🔥 Action Grill': ['Chicken Kebab','Sheftalia Pork Sausages','Haloumi Cheese','Chicken Souvlaki'],
+      '🍲 Σούπα': ['Trachanas Soup'],
+    },
+    sun: {
+      '🥗 Italian Salads': ['Artichoke Salad','Caprese Salad','Green Salad w Prosciutto','Pasta Salad','Caesar Salad','Greek Salad','Tzatziki'],
+      '🍕 Pizza': ['Pizza w Mushrooms','Pizza Margarita'],
+      '🍝 Pasta': ['Bolognese','Napolitana','Carbonara Sauce','Spaghetti','Pasta Pesto Genovese w Fresh Ricotta','Lasagna w Mozzarella & Ricotta'],
+      '🥩 Κρέατα': ['Porchetta','Chicken Cacciatore','Spezzatino Italian Stew w Sundried Tomato','Tuscan Chicken'],
+      '🐟 Ψάρια': ['Cod Livornese','Garlic Mussels','Grilled Fish Lemon Sauce'],
+      '🥦 Vegetarian': ['Baked Aubergines w Cheese & Tomatoes','Aubergines Caponata w Peppers & Pesto','Potatoes Au Gratin w Provolone','Celeriac Mash / Cauliflower Puree','Artichoke w Lemon Saffron Sauce'],
+      '🍟 Garnish': ['Polenta','Rice w Green Beans & Sundried Tomatoes','Basmati Rice','Steamed Vegetables','French Fries'],
+      '🔥 Action Grill': ['Entrecôte','Pancetta','Pasta Cacio Pepe','Risotto'],
+      '🍲 Σούπα': ['Tomato Soup w Fresh Ricotta'],
+    },
+  }
+};
+
+/* ══ STATE ══ */
+let S = {
+  day: 'mon',
+  service: 'breakfast',
+  workers: [],  // {id, name}
+  tasks: {},    // workerId => [{id, text, tag, done}]
+};
+const KEY = 'he_simple_v1';
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if (d) { S.workers = d.workers||[]; S.tasks = d.tasks||{}; }
+  } catch(e){}
+  const today = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
+  S.day = today;
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify({workers:S.workers,tasks:S.tasks})); } catch(e){}
+}
+
+/* ══ MENU RENDER ══ */
+function getMenuSections() {
+  if (S.service === 'breakfast') {
+    return MENU.breakfast._all;
+  } else {
+    const std = MENU[S.service]._std || {};
+    const daily = MENU[S.service][S.day] || {};
+    return {...std, ...daily};
+  }
+}
+
+let searchQuery = '';
+function filterMenu(q) { searchQuery = q.toLowerCase().trim(); renderMenu(); }
+
+function renderMenu() {
+  const sections = getMenuSections();
+  const el = document.getElementById('menuContent');
+  let html = '';
+  Object.entries(sections).forEach(([sec, items]) => {
+    const filtered = items.filter(i => !searchQuery || i.toLowerCase().includes(searchQuery));
+    if (!filtered.length) return;
+    const [ico, ...rest] = sec.split(' ');
+    html += `<div class="station-block">
+      <div class="station-title"><span class="sico">${ico}</span> ${rest.join(' ')}</div>`;
+    filtered.forEach(item => {
+      html += `<div class="menu-item" onclick="quickAddFromMenu(this, '${esc(item)}', '${esc(sec)}')">
+        <div class="item-dot"></div>
+        <div class="item-name">${item}</div>
+        <button class="item-add-btn" onclick="event.stopPropagation();addToWorker('${esc(item)}','${esc(sec)}')">+ Προσθήκη</button>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  if (!html) html = `<div style="padding:20px;color:var(--grey);text-align:center;font-size:0.85rem">Δεν βρέθηκαν αποτελέσματα</div>`;
+  el.innerHTML = html;
+}
+
+function esc(s){ return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+/* ══ WORKER RENDER ══ */
+const COLORS = ['wc0','wc1','wc2','wc3','wc4','wc5','wc6','wc7'];
+
+function renderWorkers() {
+  const el = document.getElementById('workersGrid');
+  if (!S.workers.length) {
+    el.innerHTML = `<div class="empty-workers">
+      <h3>Δεν υπάρχουν μέλη ομάδας</h3>
+      <p>Πάτα «+ Προσθήκη Ατόμου» για να ξεκινήσεις να αναθέτεις εργασίες.</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = S.workers.map((w, wi) => {
+    const wTasks = S.tasks[w.id] || [];
+    const done = wTasks.filter(t=>t.done).length;
+    const col = COLORS[wi % COLORS.length];
+    const initials = w.name.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
+
+    const tasksHtml = wTasks.length
+      ? wTasks.map(t => `
+        <div class="task-item" id="ti-${t.id}">
+          <div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${w.id}','${t.id}')"></div>
+          <div class="task-text ${t.done?'done':''}">${t.text}</div>
+          ${t.tag ? `<div class="task-tag">${shortTag(t.tag)}</div>` : ''}
+          <button class="task-del" onclick="deleteTask('${w.id}','${t.id}')" title="Διαγραφή">✕</button>
+        </div>`).join('')
+      : `<div style="padding:10px 4px;color:#bbb;font-size:0.8rem;font-style:italic">Καμία εργασία ακόμα</div>`;
+
+    return `<div class="worker-card">
+      <div class="worker-card-header ${col}">
+        <div class="worker-name">
+          <div class="worker-avatar">${initials}</div>
+          ${w.name}
+        </div>
+        <div class="worker-header-right">
+          <span class="worker-progress-text">${done}/${wTasks.length}</span>
+          <button class="remove-worker-btn" onclick="removeWorker('${w.id}')" title="Αφαίρεση">✕</button>
+        </div>
+      </div>
+      <div class="worker-tasks-list" id="wtl-${w.id}">${tasksHtml}</div>
+      <div class="add-task-row">
+        <div class="add-task-input-wrap">
+          <input class="add-task-input" type="text" placeholder="Πρόσθεσε εργασία..." id="inp-${w.id}"
+            onkeydown="if(event.key==='Enter')submitTask('${w.id}')">
+          <button class="add-task-btn" onclick="submitTask('${w.id}')">+</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function shortTag(sec) {
+  // Remove emoji prefix for tag
+  return sec.replace(/[\u{1F300}-\u{1FFFF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,'').trim().split(' ').slice(0,2).join(' ');
+}
+
+/* ══ INTERACTIONS ══ */
+function submitTask(wid) {
+  const inp = document.getElementById('inp-' + wid);
+  const text = inp.value.trim();
+  if (!text) return;
+  addTask(wid, text, '');
+  inp.value = '';
+}
+
+function addTask(wid, text, tag) {
+  if (!S.tasks[wid]) S.tasks[wid] = [];
+  S.tasks[wid].push({ id: Date.now() + Math.random().toString(36).slice(2), text, tag, done: false });
+  save();
+  renderWorkers();
+}
+
+function toggleTask(wid, tid) {
+  const tasks = S.tasks[wid] || [];
+  const t = tasks.find(x => x.id === tid);
+  if (t) { t.done = !t.done; save(); renderWorkers(); }
+}
+
+function deleteTask(wid, tid) {
+  S.tasks[wid] = (S.tasks[wid]||[]).filter(x => x.id !== tid);
+  save(); renderWorkers();
+}
+
+function addToWorker(item, tag) {
+  if (!S.workers.length) { showToast('Πρόσθεσε πρώτα μέλη ομάδας!'); return; }
+  if (S.workers.length === 1) {
+    addTask(S.workers[0].id, item, tag);
+    showToast(`✓ Προστέθηκε στον/ην ${S.workers[0].name}`);
+  } else {
+    // Show picker
+    showWorkerPicker(item, tag);
+  }
+}
+
+function quickAddFromMenu(el, item, tag) {
+  // toggle selection
+  el.classList.toggle('selected');
+}
+
+/* Worker picker */
+function showWorkerPicker(item, tag) {
+  const opts = S.workers.map(w =>
+    `<button onclick="addTask('${w.id}','${esc(item)}','${esc(tag)}');closeModal();showToast('✓ ${esc(w.name)}')" style="width:100%;text-align:left;padding:9px 12px;margin-bottom:6px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);cursor:pointer;font-family:DM Sans,sans-serif;font-size:0.85rem;font-weight:600;color:var(--dark);">
+      👤 ${w.name}
+    </button>`
+  ).join('');
+  document.getElementById('modal').innerHTML = `<div class="modal">
+    <h3>Σε ποιον να το αναθέσεις;</h3>
+    <p style="font-size:0.82rem;color:var(--grey);margin-bottom:12px;font-style:italic">${item}</p>
+    ${opts}
+    <button class="modal-cancel" style="width:100%;margin-top:4px" onclick="restoreModal();closeModal()">Άκυρο</button>
+  </div>`;
+  document.getElementById('modal').classList.add('open');
+}
+
+function restoreModal() {
+  document.getElementById('modal').innerHTML = `<div class="modal">
+    <h3>👤 Νέο Μέλος Ομάδας</h3>
+    <input class="modal-input" type="text" id="workerNameInput" placeholder="Όνομα..." onkeydown="if(event.key==='Enter')confirmAddWorker()">
+    <div class="modal-actions">
+      <button class="modal-confirm" onclick="confirmAddWorker()">Προσθήκη</button>
+      <button class="modal-cancel" onclick="closeModal()">Άκυρο</button>
+    </div>
+  </div>`;
+}
+
+function openAddWorker() {
+  restoreModal();
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('workerNameInput')?.focus(), 100);
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function confirmAddWorker() {
+  const name = document.getElementById('workerNameInput')?.value?.trim();
+  if (!name) return;
+  S.workers.push({ id: Date.now().toString(36), name });
+  save(); closeModal(); renderWorkers();
+}
+
+function removeWorker(wid) {
+  if (!confirm('Αφαίρεση ατόμου και όλων των εργασιών του;')) return;
+  S.workers = S.workers.filter(w => w.id !== wid);
+  delete S.tasks[wid];
+  save(); renderWorkers();
+}
+
+function clearAll() {
+  if (!confirm('Καθαρισμός όλων των εργασιών (οι εργαζόμενοι παραμένουν);')) return;
+  S.tasks = {};
+  save(); renderWorkers();
+}
+
+/* Toast */
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+/* ══ TABS ══ */
+function renderTabs() {
+  // Days
+  document.getElementById('dayPills').innerHTML = DAYS.map(d =>
+    `<button class="pill${S.day===d.key?' active':''}" onclick="selDay('${d.key}')">${d.short}</button>`
+  ).join('');
+  // Services
+  const svcs = [{k:'breakfast',l:'☀️ Πρωινό',c:'bf'},{k:'lunch',l:'🌤 Μεσημέρι',c:'lunch'},{k:'dinner',l:'🌙 Δείπνο',c:'dinner'}];
+  document.getElementById('svcPills').innerHTML = svcs.map(s =>
+    `<button class="pill service-${s.c}${S.service===s.k?' active '+s.c:''}" onclick="selSvc('${s.k}')">${s.l}</button>`
+  ).join('');
+  // Theme
+  const tag = document.getElementById('themeTag');
+  if (S.service==='dinner') { tag.textContent = DINNER_THEME[S.day]; tag.classList.add('show'); }
+  else { tag.classList.remove('show'); tag.textContent=''; }
+}
+
+function selDay(d) { S.day=d; renderTabs(); renderMenu(); document.getElementById('searchBox').value=''; searchQuery=''; }
+function selSvc(s) { S.service=s; renderTabs(); renderMenu(); document.getElementById('searchBox').value=''; searchQuery=''; }
+
+/* ══ INIT ══ */
+load();
+renderTabs();
+renderMenu();
+renderWorkers();
+</script>
+</body>
+</html>
