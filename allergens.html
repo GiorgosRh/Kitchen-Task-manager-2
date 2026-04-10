@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Helios & Ella — Αλλεργιογόνα</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f1117;
+  --surface: #181c27;
+  --surface2: #1e2335;
+  --border: rgba(255,255,255,0.07);
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --white: #ffffff;
+
+  /* Allergen colors */
+  --c-gluten:  #ef4444;
+  --c-dairy:   #f59e0b;
+  --c-eggs:    #eab308;
+  --c-fish:    #3b82f6;
+  --c-shell:   #06b6d4;
+  --c-nuts:    #8b5cf6;
+  --c-peanuts: #ec4899;
+  --c-soy:     #10b981;
+  --c-celery:  #84cc16;
+  --c-mustard: #f97316;
+  --c-sesame:  #a16207;
+  --c-sulph:   #6366f1;
+  --c-lupin:   #14b8a6;
+  --c-mollusc: #64748b;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.header {
+  padding: 18px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+}
+
+.brand {
+  display: flex; align-items: center; gap: 10px;
+}
+.brand h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.15rem; font-weight: 800;
+  color: var(--white);
+  letter-spacing: -0.01em;
+}
+.brand span { font-size: 1.4rem; }
+.brand p { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 1px; }
+
+.header-right { display: flex; gap: 8px; align-items: center; }
+.btn {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem; font-weight: 600;
+  padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-ghost { background: rgba(255,255,255,0.06); color: var(--muted); }
+.btn-ghost:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+.btn-primary { background: #ef4444; color: white; }
+.btn-primary:hover { filter: brightness(1.1); }
+
+/* ── LEGEND ── */
+.legend {
+  padding: 14px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+}
+.legend-label { font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-right: 4px; }
+
+.a-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 600;
+  cursor: pointer; border: 1.5px solid transparent;
+  transition: all 0.15s; white-space: nowrap;
+  opacity: 0.55;
+}
+.a-chip:hover { opacity: 1; transform: scale(1.05); }
+.a-chip.active { opacity: 1; }
+.a-chip .ico { font-size: 0.85rem; }
+
+/* ── SEARCH + FILTERS ── */
+.toolbar {
+  padding: 14px 24px;
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.search-wrap { position: relative; flex: 1; min-width: 200px; }
+.search-wrap .ico { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.9rem; }
+.search-input {
+  width: 100%;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  padding: 9px 12px 9px 36px;
+  border-radius: 9px; outline: none;
+  transition: border-color 0.15s;
+}
+.search-input:focus { border-color: rgba(255,255,255,0.2); }
+.search-input::placeholder { color: var(--muted); }
+
+.view-btns { display: flex; gap: 4px; background: var(--surface2); padding: 3px; border-radius: 8px; }
+.view-btn {
+  padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;
+  font-family: 'Outfit', sans-serif; font-size: 0.78rem; font-weight: 600;
+  background: transparent; color: var(--muted); transition: all 0.15s;
+}
+.view-btn.active { background: #ef4444; color: white; }
+
+.filter-clear {
+  font-family: 'Outfit', sans-serif; font-size: 0.75rem; font-weight: 600;
+  color: var(--muted); background: none; border: none; cursor: pointer; padding: 4px 8px;
+}
+.filter-clear:hover { color: var(--text); }
+
+/* ── STATS BAR ── */
+.stats-bar {
+  padding: 8px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem; color: var(--muted);
+  display: flex; gap: 16px;
+}
+.stat-num { color: var(--text); font-weight: 700; }
+
+/* ── MAIN ── */
+.main { padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+
+/* ── TABLE VIEW ── */
+.table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; min-width: 900px; }
+thead tr { background: var(--surface2); }
+th {
+  padding: 10px 12px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.7rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted); text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+th.allergen-th {
+  text-align: center; padding: 8px 6px; font-size: 0.65rem; cursor: pointer;
+}
+th.allergen-th:hover { color: var(--text); }
+th.allergen-th.highlight { color: var(--white); }
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface); }
+tbody tr.hidden-row { display: none; }
+
+.dish-cell { padding: 10px 12px; }
+.dish-name { font-size: 0.85rem; font-weight: 500; color: var(--text); }
+.dish-cat { font-size: 0.7rem; color: var(--muted); margin-top: 1px; }
+
+.allergen-cell { text-align: center; padding: 8px 6px; }
+.dot {
+  display: inline-block; width: 18px; height: 18px; border-radius: 50%;
+  font-size: 0.65rem; line-height: 18px; text-align: center;
+  transition: transform 0.1s;
+}
+.dot.yes { font-size: 0.75rem; }
+.dot.yes:hover { transform: scale(1.3); }
+.dot.no { background: transparent; }
+
+/* ── CARD VIEW ── */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.dish-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: border-color 0.15s;
+}
+.dish-card:hover { border-color: rgba(255,255,255,0.15); }
+.dish-card.hidden-card { display: none; }
+
+.card-name { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+.card-cat { font-size: 0.7rem; color: var(--muted); margin-bottom: 10px; }
+
+.card-allergens { display: flex; flex-wrap: wrap; gap: 5px; }
+.card-allergens .a-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 20px;
+  font-size: 0.68rem; font-weight: 600;
+  border: 1px solid;
+}
+.no-allergens { font-size: 0.75rem; color: var(--muted); font-style: italic; }
+
+/* ── ALLERGEN VIEW ── */
+.allergen-view { display: flex; flex-direction: column; gap: 16px; }
+.allergen-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.allergen-section-header {
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.allergen-section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.9rem; font-weight: 700;
+  flex: 1;
+}
+.allergen-count { font-size: 0.75rem; color: var(--muted); }
+.allergen-dishes { padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 6px; }
+.allergen-dish-tag {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.78rem; color: var(--text);
+}
+
+/* Print */
+@media print {
+  body { background: white; color: black; }
+  .header, .toolbar, .legend, .stats-bar, .btn, .view-btns { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .view-btns, .header-right { display: none; }
+  table { font-size: 0.75rem; }
+  .dot.yes { -webkit-print-color-adjust: exact; }
+}
+
+@media (max-width: 600px) {
+  .header { padding: 12px 16px; }
+  .legend { padding: 10px 16px; }
+  .toolbar { padding: 10px 16px; }
+  .main { padding: 14px 16px; }
+  .stats-bar { padding: 6px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="brand">
+    <span>☀️</span>
+    <div>
+      <h1>Helios &amp; Ella — Αλλεργιογόνα</h1>
+      <p>EU Regulation 1169/2011 · 14 Αλλεργιογόνα</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-ghost" onclick="window.print()">🖨 Εκτύπωση</button>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <span class="legend-label">Φίλτρο:</span>
+  <div id="legendChips"></div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="ico">🔍</span>
+    <input class="search-input" type="text" placeholder="Αναζήτηση πιάτου..." oninput="filterDishes(this.value)" id="searchInput">
+  </div>
+  <div class="view-btns">
+    <button class="view-btn active" onclick="setView('table', this)">📋 Πίνακας</button>
+    <button class="view-btn" onclick="setView('cards', this)">🃏 Κάρτες</button>
+    <button class="view-btn" onclick="setView('allergen', this)">⚠️ Ανά Αλλ.</button>
+  </div>
+  <button class="filter-clear" onclick="clearFilters()">✕ Καθαρισμός</button>
+</div>
+
+<!-- Stats -->
+<div class="stats-bar" id="statsBar"></div>
+
+<!-- Main -->
+<div class="main" id="mainContent"></div>
+
+<script>
+/* ══ ALLERGEN DEFINITIONS ══ */
+const ALLERGENS = [
+  { key: 'gluten',   label: 'Γλουτένη',   short: 'GL', ico: '🌾', color: '#ef4444' },
+  { key: 'dairy',    label: 'Γαλακτοκ.',  short: 'DA', ico: '🥛', color: '#f59e0b' },
+  { key: 'eggs',     label: 'Αυγά',        short: 'EG', ico: '🥚', color: '#eab308' },
+  { key: 'fish',     label: 'Ψάρι',        short: 'FI', ico: '🐟', color: '#3b82f6' },
+  { key: 'shell',    label: 'Οστρακ.',     short: 'SH', ico: '🦐', color: '#06b6d4' },
+  { key: 'nuts',     label: 'Ξηροί Καρπ.', short: 'NU', ico: '🌰', color: '#8b5cf6' },
+  { key: 'peanuts',  label: 'Φυστίκια',    short: 'PE', ico: '🥜', color: '#ec4899' },
+  { key: 'soy',      label: 'Σόγια',       short: 'SO', ico: '🫘', color: '#10b981' },
+  { key: 'celery',   label: 'Σέλινο',      short: 'CE', ico: '🌿', color: '#84cc16' },
+  { key: 'mustard',  label: 'Μουστάρδα',   short: 'MU', ico: '🌻', color: '#f97316' },
+  { key: 'sesame',   label: 'Σησάμι',      short: 'SE', ico: '⚪', color: '#d97706' },
+  { key: 'sulph',    label: 'Θειώδη',      short: 'SU', ico: '🍷', color: '#6366f1' },
+  { key: 'lupin',    label: 'Λούπινο',     short: 'LU', ico: '🌸', color: '#14b8a6' },
+  { key: 'mollusc',  label: 'Μαλάκια',     short: 'MO', ico: '🦑', color: '#64748b' },
+];
+
+/* ══ DISH DATA
+   Format: [name, category, {allergen_keys...}]
+   Based on Helios & Ella 2026 menu
+══ */
+const DISHES = [
+  // ── BREAKFAST ──
+  ['Scrambled Eggs', '☀️ Πρωινό / Hot', {eggs:1, dairy:1}],
+  ['Omelette', '☀️ Πρωινό / Hot', {eggs:1, dairy:1}],
+  ['Ham & Cheese Omelette', '☀️ Πρωινό / Hot', {eggs:1, dairy:1}],
+  ['Bacon', '☀️ Πρωινό / Hot', {}],
+  ['White Sausage', '☀️ Πρωινό / Hot', {gluten:1}],
+  ['Red Sausage', '☀️ Πρωινό / Hot', {gluten:1}],
+  ['Hash Browns', '☀️ Πρωινό / Hot', {gluten:1}],
+  ['White Beans', '☀️ Πρωινό / Hot', {}],
+  ['Pancakes', '☀️ Πρωινό / Hot', {gluten:1, eggs:1, dairy:1}],
+  ['Churros', '☀️ Πρωινό / Hot', {gluten:1, eggs:1}],
+  ['Porridge', '☀️ Πρωινό / Hot', {gluten:1, dairy:1}],
+  ['Croissants', '☀️ Πρωινό / Ζαχαροπλαστείο', {gluten:1, dairy:1, eggs:1}],
+  ['Cream-Filled Pastries', '☀️ Πρωινό / Ζαχαροπλαστείο', {gluten:1, dairy:1, eggs:1}],
+  ['Chocolate Donuts', '☀️ Πρωινό / Ζαχαροπλαστείο', {gluten:1, dairy:1, eggs:1}],
+  ['Greek Yogurt', '☀️ Πρωινό / Γιαούρτια', {dairy:1}],
+  ['Hummus', '☀️ Πρωινό / Spread', {sesame:1}],
+  ['Beet Hummus', '☀️ Πρωινό / Spread', {sesame:1}],
+  ['Guacamole', '☀️ Πρωινό / Spread', {}],
+  ['Blue Cheese', '☀️ Πρωινό / Τυριά', {dairy:1}],
+  ['Gouda / Masdammer', '☀️ Πρωινό / Τυριά', {dairy:1}],
+
+  // ── ΣΤΑΘΕΡΕΣ ΣΑΛΑΤΕΣ / DRESSINGS ──
+  ['Tzatziki', '🥗 Σαλάτες', {dairy:1}],
+  ['Caesar Dressing', '🫙 Dressings', {eggs:1, fish:1, dairy:1}],
+  ['Aioli', '🫙 Dressings', {eggs:1}],
+  ['Blue Cheese Dressing', '🫙 Dressings', {dairy:1, eggs:1}],
+  ['Honey Mustard', '🫙 Dressings', {mustard:1}],
+  ['Hummus', '🫙 Dressings', {sesame:1}],
+
+  // ── LUNCH SALADS ──
+  ['Greek Potato Salad', '🥗 Σαλάτες', {mustard:1}],
+  ['Waldorf Salad', '🥗 Σαλάτες', {nuts:1, eggs:1, dairy:1, celery:1}],
+  ['Caesar Salad', '🥗 Σαλάτες', {eggs:1, fish:1, dairy:1, gluten:1}],
+  ['Caprese Salad', '🥗 Σαλάτες', {dairy:1}],
+  ['Tirokafteri', '🥗 Σαλάτες', {dairy:1}],
+  ['Niçoise Salad', '🥗 Σαλάτες', {fish:1, eggs:1}],
+  ['Wakame Salad', '🥗 Σαλάτες', {soy:1, sesame:1}],
+  ['Japanese Caesar Salad', '🥗 Σαλάτες', {eggs:1, fish:1, soy:1, sesame:1}],
+  ['Pasta Salad', '🥗 Σαλάτες', {gluten:1, eggs:1}],
+  ['Seafood Mix Salad', '🥗 Σαλάτες', {shell:1, mollusc:1}],
+  ['Shrimp & Mango Salad', '🥗 Σαλάτες', {shell:1}],
+
+  // ── PIZZA ──
+  ['Pizza Margarita', '🍕 Pizza', {gluten:1, dairy:1}],
+  ['Pizza w Bacon', '🍕 Pizza', {gluten:1, dairy:1}],
+  ['Pizza Capricciosa', '🍕 Pizza', {gluten:1, dairy:1, eggs:1}],
+  ['Pizza Salami', '🍕 Pizza', {gluten:1, dairy:1}],
+  ['Pizza Hawaii', '🍕 Pizza', {gluten:1, dairy:1}],
+  ['Pizza w Mushrooms', '🍕 Pizza', {gluten:1, dairy:1}],
+  ['Pizza Peperoni', '🍕 Pizza', {gluten:1, dairy:1}],
+
+  // ── PASTA ──
+  ['Spaghetti / Penne / Farfalle', '🍝 Pasta', {gluten:1, eggs:1}],
+  ['Bolognese Sauce', '🍝 Pasta', {gluten:1, celery:1}],
+  ['Napolitana Sauce', '🍝 Pasta', {gluten:1}],
+  ['Carbonara Sauce', '🍝 Pasta', {gluten:1, eggs:1, dairy:1}],
+  ['Pasta 4 Cheese', '🍝 Pasta', {gluten:1, dairy:1, eggs:1}],
+  ['Pasta Pesto Genovese', '🍝 Pasta', {gluten:1, dairy:1, nuts:1}],
+  ['Pasta Amatriciana', '🍝 Pasta', {gluten:1, dairy:1}],
+  ['Lobster Pasta', '🍝 Pasta', {gluten:1, shell:1}],
+  ['Pasta Seafood', '🍝 Pasta', {gluten:1, shell:1, mollusc:1, fish:1}],
+  ['Mac & Cheese', '🍝 Pasta', {gluten:1, dairy:1}],
+  ['Gnocchi Amatriciana', '🍝 Pasta', {gluten:1, dairy:1, eggs:1}],
+  ['Lasagna w Mozzarella', '🍝 Pasta', {gluten:1, dairy:1, eggs:1}],
+  ['Pastitsio', '🍝 Pasta', {gluten:1, dairy:1, eggs:1}],
+  ['Kritharoto w Chicken', '🍝 Pasta', {gluten:1, dairy:1}],
+
+  // ── ΚΡΕΑΤΑ ──
+  ['Moussaka', '🥩 Κρέατα', {gluten:1, dairy:1, eggs:1}],
+  ['Oven Baked Lamb', '🥩 Κρέατα', {}],
+  ['Stew Beef "Stifado"', '🥩 Κρέατα', {sulph:1}],
+  ['Souvlaki', '🥩 Κρέατα', {gluten:1}],
+  ['Pork "Tigania"', '🥩 Κρέατα', {mustard:1}],
+  ['BBQ Spare Ribs', '🥩 Κρέατα', {gluten:1, mustard:1, sulph:1}],
+  ['Chicken Kentucky', '🥩 Κρέατα', {gluten:1, eggs:1, dairy:1}],
+  ['Chicken Cacciatore', '🥩 Κρέατα', {celery:1}],
+  ['Mongolian Beef', '🥩 Κρέατα', {gluten:1, soy:1, sesame:1}],
+  ['Sweet & Sour Chicken', '🥩 Κρέατα', {gluten:1, soy:1}],
+  ['Chicken Wings Teriyaki', '🥩 Κρέατα', {gluten:1, soy:1, sesame:1}],
+  ['Crispy Cajun Chicken', '🥩 Κρέατα', {gluten:1, dairy:1}],
+  ['Soutzoukakia', '🥩 Κρέατα', {gluten:1, eggs:1}],
+  ['Porchetta', '🥩 Κρέατα', {}],
+  ['Chilli Con Carne', '🥩 Κρέατα', {celery:1}],
+  ['Chicken Tikka Masala', '🥩 Κρέατα', {dairy:1}],
+  ['Sofrito Veal', '🥩 Κρέατα', {gluten:1, dairy:1}],
+  ['Moo Shu Pork', '🥩 Κρέατα', {gluten:1, soy:1, sesame:1, eggs:1}],
+  ['Creamy Chicken Enchiladas', '🥩 Κρέατα', {gluten:1, dairy:1}],
+  ['Sheftalia', '🥩 Κρέατα', {gluten:1}],
+  ['Kebab / Gyros', '🥩 Κρέατα', {gluten:1}],
+
+  // ── ΨΑΡΙΑ ──
+  ['Spetsiota Fish', '🐟 Ψάρια', {fish:1}],
+  ['Shrimps Saganaki', '🐟 Ψάρια', {shell:1, dairy:1, gluten:1}],
+  ['Fried Fish', '🐟 Ψάρια', {fish:1, gluten:1}],
+  ['Salmon w Teriyaki', '🐟 Ψάρια', {fish:1, gluten:1, soy:1, sesame:1}],
+  ['Cod w Tomato Miso', '🐟 Ψάρια', {fish:1, soy:1, gluten:1}],
+  ['Curry Shrimps', '🐟 Ψάρια', {shell:1, dairy:1}],
+  ['Garlic Mussels', '🐟 Ψάρια', {mollusc:1, dairy:1}],
+  ['Cod Livornese', '🐟 Ψάρια', {fish:1}],
+  ['Grilled Fish Lemon Sauce', '🐟 Ψάρια', {fish:1}],
+  ['Calamares Tempura', '🐟 Ψάρια', {mollusc:1, gluten:1, eggs:1}],
+  ['Fish Moqueca', '🐟 Ψάρια', {fish:1, shell:1}],
+  ['Cajun Shrimps', '🐟 Ψάρια', {shell:1}],
+  ['Salmon w Chimichurri', '🐟 Ψάρια', {fish:1}],
+  ['Pie w Salmon & Roquefort', '🐟 Ψάρια', {fish:1, dairy:1, gluten:1, eggs:1}],
+  ['Savoro Fish', '🐟 Ψάρια', {fish:1, sulph:1}],
+  ['Shrimps & Mussels Saganaki', '🐟 Ψάρια', {shell:1, mollusc:1, dairy:1, gluten:1}],
+
+  // ── ΧΟΡΤΟΦΑΓΙΚΑ ──
+  ['Moussaka (Vegetarian)', '🥦 Vegetarian', {gluten:1, dairy:1, eggs:1}],
+  ['Spinach Pie', '🥦 Vegetarian', {gluten:1, dairy:1, eggs:1}],
+  ['Cheese Pie', '🥦 Vegetarian', {gluten:1, dairy:1, eggs:1}],
+  ['Imam Bayildi', '🥦 Vegetarian', {dairy:1}],
+  ['Spring Rolls', '🥦 Vegetarian', {gluten:1, soy:1}],
+  ['Zucchini Balls', '🥦 Vegetarian', {gluten:1, eggs:1, dairy:1}],
+  ['Empanadas', '🥦 Vegetarian', {gluten:1, dairy:1, eggs:1}],
+  ['Quesadillas', '🥦 Vegetarian', {gluten:1, dairy:1}],
+  ['Cheese Balls', '🥦 Vegetarian', {gluten:1, dairy:1, eggs:1}],
+  ['Stuffed Vine Leaves', '🥦 Vegetarian', {}],
+  ['Briam Greek Stew', '🥦 Vegetarian', {}],
+  ['Chickpeas w Tomato', '🥦 Vegetarian', {}],
+  ['Cauliflower Ragout w Graviera', '🥦 Vegetarian', {dairy:1}],
+  ['Lasagna w Vegetables', '🥦 Vegetarian', {gluten:1, dairy:1, eggs:1}],
+  ['Potatoes Au Gratin', '🥦 Vegetarian', {dairy:1, eggs:1}],
+  ['Mac N Cheese', '🥦 Vegetarian', {gluten:1, dairy:1}],
+  ['Pitaroudia', '🥦 Vegetarian', {gluten:1}],
+
+  // ── ΣΟΥΠΕΣ ──
+  ['Fish Soup', '🍲 Σούπες', {fish:1, celery:1}],
+  ['Thai Coconut Soup (Tom Kha Gai)', '🍲 Σούπες', {shell:1}],
+  ['Pumpkin Soup', '🍲 Σούπες', {dairy:1, celery:1}],
+  ['Minestrone Soup', '🍲 Σούπες', {gluten:1, celery:1}],
+  ['Lobster Soup', '🍲 Σούπες', {shell:1, dairy:1}],
+  ['Onion Soup', '🍲 Σούπες', {gluten:1, dairy:1, celery:1}],
+  ['Hot & Sour Soup', '🍲 Σούπες', {gluten:1, soy:1, eggs:1}],
+  ['Tomato Soup w Ricotta', '🍲 Σούπες', {dairy:1, celery:1}],
+  ['Pozole Soup', '🍲 Σούπες', {celery:1}],
+  ['Trachanas Soup', '🍲 Σούπες', {gluten:1, dairy:1}],
+
+  // ── ΓΛΥΚΑ ──
+  ['Mousse', '🍮 Γλυκά', {dairy:1, eggs:1}],
+  ['Panna Cotta', '🍮 Γλυκά', {dairy:1}],
+  ['Cheese Cake', '🍮 Γλυκά', {gluten:1, dairy:1, eggs:1}],
+  ['Chocolate Cake', '🍮 Γλυκά', {gluten:1, dairy:1, eggs:1, nuts:1}],
+  ['Tiramisu', '🍮 Γλυκά', {gluten:1, dairy:1, eggs:1}],
+  ['Millefeuille', '🍮 Γλυκά', {gluten:1, dairy:1, eggs:1}],
+  ['Fruit Tarte', '🍮 Γλυκά', {gluten:1, dairy:1, eggs:1, nuts:1}],
+  ['Red Velvet Cake', '🍮 Γλυκά', {gluten:1, dairy:1, eggs:1}],
+  ['Brownies', '🍮 Γλυκά', {gluten:1, dairy:1, eggs:1, nuts:1}],
+];
+
+/* ══ STATE ══ */
+let activeAllergens = new Set();
+let searchQ = '';
+let currentView = 'table';
+
+/* ══ LEGEND CHIPS ══ */
+function renderLegend() {
+  const el = document.getElementById('legendChips');
+  el.innerHTML = ALLERGENS.map(a => `
+    <div class="a-chip${activeAllergens.has(a.key) ? ' active' : ''}"
+      style="background:${activeAllergens.has(a.key) ? a.color+'22' : 'rgba(255,255,255,0.04)'};
+             border-color:${activeAllergens.has(a.key) ? a.color : 'transparent'};
+             color:${activeAllergens.has(a.key) ? a.color : 'var(--muted)'}"
+      onclick="toggleAllergen('${a.key}')">
+      <span class="ico">${a.ico}</span> ${a.label}
+    </div>`).join('');
+}
+
+function toggleAllergen(key) {
+  if (activeAllergens.has(key)) activeAllergens.delete(key);
+  else activeAllergens.add(key);
+  renderLegend();
+  applyFilters();
+}
+
+function clearFilters() {
+  activeAllergens.clear();
+  searchQ = '';
+  document.getElementById('searchInput').value = '';
+  renderLegend();
+  applyFilters();
+}
+
+/* ══ FILTER LOGIC ══ */
+function visibleDishes() {
+  return DISHES.filter(([name, cat, allergens]) => {
+    const matchSearch = !searchQ || name.toLowerCase().includes(searchQ) || cat.toLowerCase().includes(searchQ);
+    const matchAllergen = activeAllergens.size === 0 || [...activeAllergens].every(k => allergens[k]);
+    return matchSearch && matchAllergen;
+  });
+}
+
+function filterDishes(q) {
+  searchQ = q.toLowerCase().trim();
+  applyFilters();
+}
+
+function applyFilters() {
+  const visible = new Set(visibleDishes().map(d => d[0]));
+  updateStats(visible.size);
+
+  if (currentView === 'table') {
+    document.querySelectorAll('tbody tr').forEach(row => {
+      row.classList.toggle('hidden-row', !visible.has(row.dataset.dish));
+    });
+    // Highlight active allergen columns
+    ALLERGENS.forEach((a, i) => {
+      const th = document.querySelector(`th[data-akey="${a.key}"]`);
+      if (th) th.classList.toggle('highlight', activeAllergens.has(a.key));
+    });
+  } else if (currentView === 'cards') {
+    document.querySelectorAll('.dish-card').forEach(card => {
+      card.classList.toggle('hidden-card', !visible.has(card.dataset.dish));
+    });
+  } else {
+    renderAllergenView();
+  }
+}
+
+function updateStats(count) {
+  const total = DISHES.length;
+  const allergenCount = activeAllergens.size;
+  document.getElementById('statsBar').innerHTML =
+    `<span>Εμφάνιση <span class="stat-num">${count}</span> από <span class="stat-num">${total}</span> πιάτα</span>` +
+    (allergenCount ? `<span>· Φίλτρο: <span class="stat-num">${allergenCount}</span> αλλεργιογόνα</span>` : '');
+}
+
+/* ══ VIEWS ══ */
+function setView(view, btn) {
+  currentView = view;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMain();
+}
+
+function renderMain() {
+  const el = document.getElementById('mainContent');
+  if (currentView === 'table') {
+    el.innerHTML = renderTable();
+  } else if (currentView === 'cards') {
+    el.innerHTML = `<div class="cards-grid">${DISHES.map(d => renderCard(d)).join('')}</div>`;
+  } else {
+    renderAllergenView();
+    return;
+  }
+  applyFilters();
+}
+
+/* TABLE */
+function renderTable() {
+  const allergenHeaders = ALLERGENS.map(a =>
+    `<th class="allergen-th" data-akey="${a.key}" onclick="toggleAllergen('${a.key}')" title="${a.label}">${a.ico}<br><span style="font-size:0.6rem">${a.short}</span></th>`
+  ).join('');
+
+  const rows = DISHES.map(([name, cat, allergens]) => {
+    const cells = ALLERGENS.map(a => {
+      if (allergens[a.key]) {
+        return `<td class="allergen-cell"><div class="dot yes" style="background:${a.color}22;color:${a.color};border:1.5px solid ${a.color}" title="${a.label}">✓</div></td>`;
+      }
+      return `<td class="allergen-cell"><div class="dot no"></div></td>`;
+    }).join('');
+
+    return `<tr data-dish="${name}">
+      <td class="dish-cell"><div class="dish-name">${name}</div><div class="dish-cat">${cat}</div></td>
+      ${cells}
+    </tr>`;
+  }).join('');
+
+  return `<div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="min-width:200px">🍽 Πιάτο</th>
+          ${allergenHeaders}
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+/* CARDS */
+function renderCard([name, cat, allergens]) {
+  const tags = ALLERGENS.filter(a => allergens[a.key]).map(a =>
+    `<div class="a-tag" style="color:${a.color};border-color:${a.color}44;background:${a.color}11">${a.ico} ${a.label}</div>`
+  ).join('');
+
+  return `<div class="dish-card" data-dish="${name}">
+    <div class="card-name">${name}</div>
+    <div class="card-cat">${cat}</div>
+    <div class="card-allergens">
+      ${tags || '<span class="no-allergens">Χωρίς γνωστά αλλεργιογόνα</span>'}
+    </div>
+  </div>`;
+}
+
+/* ALLERGEN VIEW */
+function renderAllergenView() {
+  const el = document.getElementById('mainContent');
+  const visible = visibleDishes();
+
+  const html = ALLERGENS.map(a => {
+    const matching = visible.filter(([n,c,al]) => al[a.key]);
+    if (!matching.length) return '';
+    const dishes = matching.map(([n]) => `<div class="allergen-dish-tag">${n}</div>`).join('');
+    return `<div class="allergen-section">
+      <div class="allergen-section-header" style="border-left:4px solid ${a.color}">
+        <span style="font-size:1.3rem">${a.ico}</span>
+        <div class="allergen-section-title" style="color:${a.color}">${a.label}</div>
+        <div class="allergen-count">${matching.length} πιάτα</div>
+      </div>
+      <div class="allergen-dishes">${dishes}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="allergen-view">${html || '<div style="padding:32px;color:var(--muted);text-align:center">Δεν βρέθηκαν αποτελέσματα</div>'}</div>`;
+  updateStats(visible.length);
+}
+
+/* ══ INIT ══ */
+renderLegend();
+renderMain();
+updateStats(DISHES.length);
+</script>
+</body>
+</html>
