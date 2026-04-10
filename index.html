@@ -719,8 +719,10 @@ function confirmAuth() {
   const val = document.getElementById('authPasswordInput')?.value;
   if (val === PASSWORD) {
     isAuthenticated = true;
+    const cb = pendingAuthCallback;
+    pendingAuthCallback = null;
     closeModal();
-    if (pendingAuthCallback) { const cb = pendingAuthCallback; pendingAuthCallback = null; cb(); }
+    if (cb) cb();
   } else {
     const err = document.getElementById('authError');
     if (err) err.classList.add('show');
