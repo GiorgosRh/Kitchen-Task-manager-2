@@ -321,6 +321,24 @@ tbody tr.hidden-row { display: none; }
 <!-- Stats -->
 <div class="stats-bar" id="statsBar"></div>
 
+<!-- Auth Overlay -->
+<div id="auth-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#181c27;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:28px 24px;width:320px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <h3 style="font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;color:#fff;margin-bottom:6px;">🔒 Απαιτείται Κωδικός</h3>
+    <p style="font-size:0.82rem;color:#6b7280;margin-bottom:14px;font-style:italic;">Εισάγετε τον κωδικό για να συνεχίσετε.</p>
+    <input id="auth-input" type="password" placeholder="Κωδικός..."
+      style="width:100%;font-family:'Outfit',sans-serif;font-size:0.9rem;padding:10px 12px;border:1.5px solid rgba(255,255,255,0.12);border-radius:8px;margin-bottom:8px;outline:none;color:#e8eaf0;background:#1e2335;box-sizing:border-box;"
+      onkeydown="if(event.key==='Enter')confirmAuth()">
+    <div id="auth-error" style="display:none;color:#ef4444;font-size:0.8rem;margin-bottom:10px;padding:6px 10px;background:rgba(239,68,68,0.1);border-radius:6px;border:1px solid rgba(239,68,68,0.3);">
+      Λάθος κωδικός. Δοκιμάστε ξανά.
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button onclick="confirmAuth()" style="flex:1;background:#ef4444;color:white;border:none;border-radius:8px;padding:10px;font-family:'Outfit',sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;">Είσοδος</button>
+      <button onclick="cancelAuth()" style="background:rgba(255,255,255,0.06);color:#6b7280;border:none;border-radius:8px;padding:10px 16px;font-family:'Outfit',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;">Άκυρο</button>
+    </div>
+  </div>
+</div>
+
 <!-- Main -->
 <div class="main" id="mainContent"></div>
 
@@ -500,6 +518,40 @@ const DISHES = [
   ['Brownies', '🍮 Γλυκά', {gluten:1, dairy:1, eggs:1, nuts:1}],
 ];
 
+/* ══ AUTH ══ */
+const AUTH_PASSWORD = 'Ella';
+let isAuthenticated = false;
+let pendingAuthCallback = null;
+
+function requireAuth(cb) {
+  if (isAuthenticated) { cb(); return; }
+  pendingAuthCallback = cb;
+  document.getElementById('auth-input').value = '';
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('auth-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('auth-input').focus(), 100);
+}
+
+function confirmAuth() {
+  const val = document.getElementById('auth-input').value;
+  if (val === AUTH_PASSWORD) {
+    isAuthenticated = true;
+    const cb = pendingAuthCallback;
+    pendingAuthCallback = null;
+    document.getElementById('auth-overlay').style.display = 'none';
+    if (cb) cb();
+  } else {
+    document.getElementById('auth-error').style.display = 'block';
+    document.getElementById('auth-input').value = '';
+    document.getElementById('auth-input').focus();
+  }
+}
+
+function cancelAuth() {
+  pendingAuthCallback = null;
+  document.getElementById('auth-overlay').style.display = 'none';
+}
+
 /* ══ EDITABLE DISH STATE ══ */
 const ALLERGEN_STORAGE_KEY = 'he_allergens_v1';
 
@@ -523,19 +575,23 @@ function saveDishState() {
 }
 
 function toggleDishAllergen(idx, key) {
-  const dish = DISH_STATE[idx];
-  if (!dish) return;
-  if (dish[2][key]) delete dish[2][key];
-  else dish[2][key] = 1;
-  saveDishState();
-  renderMain();
+  requireAuth(() => {
+    const dish = DISH_STATE[idx];
+    if (!dish) return;
+    if (dish[2][key]) delete dish[2][key];
+    else dish[2][key] = 1;
+    saveDishState();
+    renderMain();
+  });
 }
 
 function resetToDefaults() {
-  if (!confirm('Επαναφορά όλων των αλλεργιογόνων στις αρχικές τιμές;')) return;
-  localStorage.removeItem(ALLERGEN_STORAGE_KEY);
-  DISH_STATE = DISHES.map(([name, cat, al]) => [name, cat, {...al}]);
-  renderMain();
+  requireAuth(() => {
+    if (!confirm('Επαναφορά όλων των αλλεργιογόνων στις αρχικές τιμές;')) return;
+    localStorage.removeItem(ALLERGEN_STORAGE_KEY);
+    DISH_STATE = DISHES.map(([name, cat, al]) => [name, cat, {...al}]);
+    renderMain();
+  });
 }
 
 /* ══ STATE ══ */
