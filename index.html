@@ -459,6 +459,24 @@ body {
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<!-- Auth Overlay -->
+<div id="auth-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:12px;padding:28px 24px;width:320px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <h3 style="font-family:'Playfair Display',serif;font-size:1.05rem;color:#1e2a1a;margin-bottom:6px;">🔒 Απαιτείται Κωδικός</h3>
+    <p style="font-size:0.82rem;color:#7a7060;margin-bottom:14px;font-style:italic;">Εισάγετε τον κωδικό για να συνεχίσετε.</p>
+    <input id="auth-input" type="password" placeholder="Κωδικός..."
+      style="width:100%;font-family:'DM Sans',sans-serif;font-size:0.9rem;padding:10px 12px;border:1.5px solid #d9d0c0;border-radius:8px;margin-bottom:8px;outline:none;color:#1e2a1a;box-sizing:border-box;"
+      onkeydown="if(event.key==='Enter')confirmAuth()">
+    <div id="auth-error" style="display:none;color:#c0392b;font-size:0.8rem;margin-bottom:10px;padding:6px 10px;background:#fdf0ee;border-radius:6px;border:1px solid #f5c6c0;">
+      Λάθος κωδικός. Δοκιμάστε ξανά.
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button onclick="confirmAuth()" style="flex:1;background:#3d5a2e;color:white;border:none;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;">Είσοδος</button>
+      <button onclick="cancelAuth()" style="background:#ede6d8;color:#7a7060;border:none;border-radius:8px;padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;">Άκυρο</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ══ DATA ══ */
 const DAYS = [
@@ -701,34 +719,30 @@ let pendingAuthCallback = null;
 function requireAuth(cb) {
   if (isAuthenticated) { cb(); return; }
   pendingAuthCallback = cb;
-  document.getElementById('modal').innerHTML = `<div class="modal">
-    <h3>🔒 Απαιτείται Κωδικός</h3>
-    <p style="font-size:0.82rem;color:var(--grey);margin-bottom:12px;font-style:italic">Εισάγετε τον κωδικό πρόσβασης.</p>
-    <input class="modal-input" type="password" id="authPasswordInput" placeholder="Κωδικός..." onkeydown="if(event.key==='Enter')confirmAuth()">
-    <div class="auth-error" id="authError">Λάθος κωδικός. Δοκιμάστε ξανά.</div>
-    <div class="modal-actions">
-      <button class="modal-confirm" onclick="confirmAuth()">Είσοδος</button>
-      <button class="modal-cancel" onclick="closeModal()">Άκυρο</button>
-    </div>
-  </div>`;
-  document.getElementById('modal').classList.add('open');
-  setTimeout(() => document.getElementById('authPasswordInput')?.focus(), 100);
+  document.getElementById('auth-input').value = '';
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('auth-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('auth-input').focus(), 100);
 }
 
 function confirmAuth() {
-  const val = document.getElementById('authPasswordInput')?.value;
+  const val = document.getElementById('auth-input').value;
   if (val === PASSWORD) {
     isAuthenticated = true;
     const cb = pendingAuthCallback;
     pendingAuthCallback = null;
-    closeModal();
+    document.getElementById('auth-overlay').style.display = 'none';
     if (cb) cb();
   } else {
-    const err = document.getElementById('authError');
-    if (err) err.classList.add('show');
-    const inp = document.getElementById('authPasswordInput');
-    if (inp) { inp.value = ''; inp.focus(); }
+    document.getElementById('auth-error').style.display = 'block';
+    document.getElementById('auth-input').value = '';
+    document.getElementById('auth-input').focus();
   }
+}
+
+function cancelAuth() {
+  pendingAuthCallback = null;
+  document.getElementById('auth-overlay').style.display = 'none';
 }
 
 /* ══ MENU RENDER ══ */
@@ -909,7 +923,7 @@ function openAddWorker() {
     setTimeout(() => document.getElementById('workerNameInput')?.focus(), 100);
   });
 }
-function closeModal() { document.getElementById('modal').classList.remove('open'); pendingAuthCallback = null; }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
 function confirmAddWorker() {
   const name = document.getElementById('workerNameInput')?.value?.trim();
   if (!name) return;
