@@ -34,6 +34,39 @@
   --c-mollusc: #64748b;
 }
 
+/* ── LIGHT MODE ── */
+body.light {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface2: #eef0f5;
+  --border: rgba(0,0,0,0.08);
+  --text: #1a1f2e;
+  --muted: #6b7280;
+  --white: #1a1f2e;
+}
+body.light .search-input { background: #fff; color: #1a1f2e; }
+body.light .view-btn { color: #6b7280; }
+body.light .allergen-dish-tag { background: #eef0f5; color: #1a1f2e; }
+body.light thead tr { background: #eef0f5; }
+body.light tbody tr:hover { background: #f9fafb; }
+body.light .dish-card { background: #fff; }
+
+/* Theme toggle button */
+.btn-theme {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--muted);
+  font-size: 1rem;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.btn-theme:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+body.light .btn-theme { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); }
+body.light .btn-theme:hover { background: rgba(0,0,0,0.1); }
+
 body {
   font-family: 'Outfit', sans-serif;
   background: var(--bg);
@@ -295,6 +328,7 @@ tbody tr.hidden-row { display: none; }
     <a href="index.html" class="btn btn-ghost" style="text-decoration:none;">← Πίσω</a>
     <button class="btn btn-ghost btn-reset" onclick="resetToDefaults()">↺ Reset</button>
     <button class="btn btn-ghost" onclick="window.print()">🖨 Εκτύπωση</button>
+    <button class="btn-theme" id="themeBtn" onclick="toggleTheme()" title="Εναλλαγή θέματος">🌙</button>
   </div>
 </div>
 
@@ -517,6 +551,26 @@ const DISHES = [
   ['Red Velvet Cake', '🍮 Γλυκά', {gluten:1, dairy:1, eggs:1}],
   ['Brownies', '🍮 Γλυκά', {gluten:1, dairy:1, eggs:1, nuts:1}],
 ];
+
+/* ══ THEME ══ */
+const THEME_KEY = 'he_allergens_theme';
+
+function applyTheme(theme) {
+  document.body.classList.toggle('light', theme === 'light');
+  document.getElementById('themeBtn').textContent = theme === 'light' ? '🌙' : '☀️';
+}
+
+function toggleTheme() {
+  const isLight = document.body.classList.contains('light');
+  const next = isLight ? 'dark' : 'light';
+  applyTheme(next);
+  try { localStorage.setItem(THEME_KEY, next); } catch(e) {}
+}
+
+(function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY) || 'dark';
+  applyTheme(saved);
+})();
 
 /* ══ AUTH ══ */
 const AUTH_PASSWORD = 'Ella';
