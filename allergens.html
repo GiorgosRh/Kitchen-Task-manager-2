@@ -171,6 +171,15 @@ body.light .meal-btn.active { background: #ef4444; color: white; }
 .day-btn:hover { color: var(--text); border-color: var(--text); }
 .day-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
 .day-btn .day-theme { font-size: 0.6rem; opacity: 0.8; }
+.day-btn .day-emoji { font-size: 1em; }
+/* Context-aware day labels: dinner mode shows dinner themes, lunch mode shows salad labels */
+.day-filter-row.lunch-mode .day-emoji-dinner,
+.day-filter-row.lunch-mode .day-theme-dinner { display: none; }
+.day-filter-row.dinner-mode .day-emoji-lunch,
+.day-filter-row.dinner-mode .day-theme-lunch { display: none; }
+/* Default (all mode): show dinner themes */
+.day-filter-row:not(.lunch-mode):not(.dinner-mode) .day-emoji-lunch,
+.day-filter-row:not(.lunch-mode):not(.dinner-mode) .day-theme-lunch { display: none; }
 body.light .day-btn { background: #f3f4f6; color: #6b7280; }
 body.light .day-btn.active { background: #3b82f6; color: white; }
 .filter-clear {
@@ -378,13 +387,13 @@ tbody tr.hidden-row { display: none; }
 <!-- Day Filter (shown for dinner/lunch) -->
 <div class="day-filter-row" id="dayFilterRow">
   <button class="day-btn active" data-day="all" onclick="setDay('all')">📅<span class="day-theme">Όλες</span></button>
-  <button class="day-btn" data-day="mon" onclick="setDay('mon')">🏛️<span class="day-theme">ΔΕΥ Greek</span></button>
-  <button class="day-btn" data-day="tue" onclick="setDay('tue')">🌎<span class="day-theme">ΤΡΙ S.Am.</span></button>
-  <button class="day-btn" data-day="wed" onclick="setDay('wed')">🌍<span class="day-theme">ΤΕΤ Intl</span></button>
-  <button class="day-btn" data-day="thu" onclick="setDay('thu')">🥢<span class="day-theme">ΠΕΜ Asian</span></button>
-  <button class="day-btn" data-day="fri" onclick="setDay('fri')">🔥<span class="day-theme">ΠΑΡ BBQ</span></button>
-  <button class="day-btn" data-day="sat" onclick="setDay('sat')">🌊<span class="day-theme">ΣΑΒ Rho.</span></button>
-  <button class="day-btn" data-day="sun" onclick="setDay('sun')">🍝<span class="day-theme">ΚΥΡ Ital.</span></button>
+  <button class="day-btn" data-day="mon" onclick="setDay('mon')"><span class="day-emoji day-emoji-dinner">🏛️</span><span class="day-emoji day-emoji-lunch">📋</span><span class="day-theme day-theme-dinner">ΔΕΥ Greek</span><span class="day-theme day-theme-lunch">ΔΕΥ Σαλάτες</span></button>
+  <button class="day-btn" data-day="tue" onclick="setDay('tue')"><span class="day-emoji day-emoji-dinner">🌎</span><span class="day-emoji day-emoji-lunch">📋</span><span class="day-theme day-theme-dinner">ΤΡΙ S.Am.</span><span class="day-theme day-theme-lunch">ΤΡΙ Σαλάτες</span></button>
+  <button class="day-btn" data-day="wed" onclick="setDay('wed')"><span class="day-emoji day-emoji-dinner">🌍</span><span class="day-emoji day-emoji-lunch">📋</span><span class="day-theme day-theme-dinner">ΤΕΤ Intl</span><span class="day-theme day-theme-lunch">ΤΕΤ Σαλάτες</span></button>
+  <button class="day-btn" data-day="thu" onclick="setDay('thu')"><span class="day-emoji day-emoji-dinner">🥢</span><span class="day-emoji day-emoji-lunch">📋</span><span class="day-theme day-theme-dinner">ΠΕΜ Asian</span><span class="day-theme day-theme-lunch">ΠΕΜ Σαλάτες</span></button>
+  <button class="day-btn" data-day="fri" onclick="setDay('fri')"><span class="day-emoji day-emoji-dinner">🔥</span><span class="day-emoji day-emoji-lunch">📋</span><span class="day-theme day-theme-dinner">ΠΑΡ BBQ</span><span class="day-theme day-theme-lunch">ΠΑΡ Σαλάτες</span></button>
+  <button class="day-btn" data-day="sat" onclick="setDay('sat')"><span class="day-emoji day-emoji-dinner">🌊</span><span class="day-emoji day-emoji-lunch">📋</span><span class="day-theme day-theme-dinner">ΣΑΒ Rho.</span><span class="day-theme day-theme-lunch">ΣΑΒ Σαλάτες</span></button>
+  <button class="day-btn" data-day="sun" onclick="setDay('sun')"><span class="day-emoji day-emoji-dinner">🍝</span><span class="day-emoji day-emoji-lunch">📋</span><span class="day-theme day-theme-dinner">ΚΥΡ Ital.</span><span class="day-theme day-theme-lunch">ΚΥΡ Σαλάτες</span></button>
 </div>
 <div style="display:none"><!-- dummy to fix unclosed div -->
 </div>
@@ -1376,9 +1385,13 @@ function toggleAllergen(key) {
 function setMeal(meal) {
   activeMeal = meal;
   document.querySelectorAll('.meal-btn').forEach(b => b.classList.toggle('active', b.dataset.meal === meal));
-  // Show/hide day filter row
+  // Show/hide day filter row and update mode class for context-aware labels
   const dayRow = document.getElementById('dayFilterRow');
-  if (dayRow) dayRow.style.display = (meal === 'dinner' || meal === 'lunch' || meal === 'all') ? 'flex' : 'none';
+  if (dayRow) {
+    dayRow.style.display = (meal === 'dinner' || meal === 'lunch' || meal === 'all') ? 'flex' : 'none';
+    dayRow.classList.toggle('lunch-mode', meal === 'lunch');
+    dayRow.classList.toggle('dinner-mode', meal === 'dinner');
+  }
   applyFilters();
 }
 function setDay(day) {
