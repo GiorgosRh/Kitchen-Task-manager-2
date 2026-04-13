@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Helios & Ella — Εβδομαδιαία Επισκόπηση</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f4efe6;
+  --bg2: #ede6d8;
+  --paper: #faf7f2;
+  --dark: #1e2a1a;
+  --olive: #3d5a2e;
+  --olive2: #4e7040;
+  --gold: #b8860b;
+  --terra: #a0522d;
+  --grey: #7a7060;
+  --line: #d9d0c0;
+  --white: #ffffff;
+  --shadow: 0 2px 16px rgba(30,42,26,0.08);
+  --radius: 12px;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--dark);
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--dark);
+  padding: 16px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 3px solid var(--gold);
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-icon { font-size: 22px; }
+.brand h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem; font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.03em;
+}
+.brand p { font-size: 0.68rem; color: rgba(255,255,255,0.4); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 1px; }
+
+.header-nav { display: flex; gap: 8px; align-items: center; }
+.nav-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem; font-weight: 600;
+  padding: 7px 14px; border-radius: 8px; cursor: pointer; border: none;
+  transition: all 0.15s; text-decoration: none; display: inline-block;
+}
+.nav-btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); }
+.nav-btn-outline:hover { background: rgba(255,255,255,0.07); color: white; }
+.nav-btn-gold { background: var(--gold); color: white; }
+.nav-btn-gold:hover { filter: brightness(1.1); }
+
+/* ── PAGE CONTENT ── */
+.page { max-width: 1200px; margin: 0 auto; padding: 28px 24px; }
+
+.page-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem; font-weight: 700; color: var(--dark);
+  margin-bottom: 6px;
+}
+.page-subtitle { font-size: 0.85rem; color: var(--grey); margin-bottom: 24px; }
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.filter-label { font-size: 0.8rem; font-weight: 600; color: var(--grey); }
+.pill-group { display: flex; gap: 3px; background: rgba(30,42,26,0.06); padding: 3px; border-radius: 9px; }
+.pill {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem; font-weight: 600;
+  padding: 5px 12px; border: none; border-radius: 7px;
+  background: transparent; color: var(--grey); cursor: pointer;
+  transition: all 0.15s; white-space: nowrap;
+}
+.pill:hover { color: var(--dark); }
+.pill.active { background: var(--olive); color: white; }
+.pill.active.bf { background: #c17f24; }
+.pill.active.lunch { background: #3d7a4e; }
+.pill.active.dinner { background: #5a3d7a; }
+
+.toggle-incomplete {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.8rem; font-weight: 600; color: var(--grey);
+  cursor: pointer; user-select: none;
+}
+.toggle-incomplete input { cursor: pointer; accent-color: var(--terra); }
+
+/* ── SUMMARY STATS ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  border: 1.5px solid var(--line);
+  box-shadow: var(--shadow);
+}
+.stat-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem; font-weight: 700; color: var(--dark);
+}
+.stat-label { font-size: 0.75rem; color: var(--grey); margin-top: 2px; }
+.stat-card.green .stat-value { color: #3d7a4e; }
+.stat-card.gold .stat-value { color: var(--gold); }
+.stat-card.red .stat-value { color: var(--terra); }
+
+/* ── WEEK GRID ── */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* ── DAY CARD ── */
+.day-card {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1.5px solid var(--line);
+  overflow: hidden;
+}
+.day-card.all-done { border-color: #a0c88a; }
+.day-card.has-pending { border-color: #e8a87c; }
+
+.day-header {
+  background: var(--dark);
+  padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.day-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem; font-weight: 700; color: var(--gold);
+}
+.day-badge {
+  font-size: 0.7rem; font-weight: 700;
+  padding: 3px 8px; border-radius: 20px;
+  background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);
+}
+.day-badge.done { background: rgba(74,222,128,0.2); color: #4ade80; }
+.day-badge.pending { background: rgba(251,191,36,0.2); color: #fbbf24; }
+
+/* ── SHIFT ROW ── */
+.shift-row {
+  border-bottom: 1px solid var(--line);
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.shift-row:last-child { border-bottom: none; }
+.shift-row:hover { background: var(--bg); }
+
+.shift-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 6px;
+}
+.shift-label {
+  font-size: 0.82rem; font-weight: 600; color: var(--dark);
+  display: flex; align-items: center; gap: 6px;
+}
+.shift-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--line);
+  flex-shrink: 0;
+}
+.shift-dot.has-tasks { background: var(--gold); }
+.shift-dot.all-done { background: #4ade80; }
+.shift-dot.has-pending { background: #f87171; }
+
+.shift-count { font-size: 0.72rem; color: var(--grey); }
+
+/* Progress bar */
+.progress-bar-wrap {
+  height: 4px; background: var(--line); border-radius: 2px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; border-radius: 2px;
+  background: var(--olive2);
+  transition: width 0.4s ease;
+}
+.progress-bar-fill.done { background: #4ade80; }
+
+/* Workers in shift */
+.shift-workers {
+  margin-top: 8px;
+  display: none;
+  flex-direction: column; gap: 4px;
+}
+.shift-workers.open { display: flex; }
+
+.worker-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 8px; border-radius: 6px;
+  background: var(--bg);
+  font-size: 0.78rem;
+}
+.worker-row-name {
+  display: flex; align-items: center; gap: 6px;
+  font-weight: 600; color: var(--dark);
+}
+.worker-mini-avatar {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--olive);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; font-weight: 700; color: white;
+  flex-shrink: 0;
+}
+.worker-task-count { font-size: 0.72rem; color: var(--grey); }
+.worker-task-count.pending { color: var(--terra); font-weight: 600; }
+
+.task-mini-list { margin-top: 4px; padding-left: 26px; }
+.task-mini-item {
+  font-size: 0.73rem; color: var(--grey);
+  padding: 2px 0; display: flex; align-items: center; gap: 5px;
+}
+.task-mini-item.done-task { text-decoration: line-through; color: #bbb; }
+.task-mini-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--line); flex-shrink: 0; }
+.task-mini-dot.done { background: #4ade80; }
+
+.shift-empty {
+  font-size: 0.75rem; color: #ccc; font-style: italic;
+  padding: 4px 0;
+}
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center; padding: 60px 20px;
+  color: var(--grey);
+}
+.empty-state h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem; margin-bottom: 8px; color: var(--dark);
+}
+.empty-state p { font-size: 0.85rem; }
+
+/* ── EXPORT BTN ── */
+.export-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem; font-weight: 600;
+  padding: 7px 14px; border-radius: 8px; cursor: pointer; border: none;
+  background: var(--olive); color: white;
+  transition: all 0.15s;
+}
+.export-btn:hover { filter: brightness(1.1); }
+
+@media (max-width: 600px) {
+  .page { padding: 16px; }
+  .week-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="brand">
+    <div class="brand-icon">☀️</div>
+    <div>
+      <h1>Helios &amp; Ella</h1>
+      <p>Kitchen Manager</p>
+    </div>
+  </div>
+  <div class="header-nav">
+    <a href="index.html" class="nav-btn nav-btn-outline">📋 Εργασίες</a>
+    <a href="allergens.html" class="nav-btn nav-btn-outline">⚠️ Αλλεργιογόνα</a>
+    <a href="overview.html" class="nav-btn nav-btn-gold">📊 Επισκόπηση</a>
+  </div>
+</div>
+
+<!-- Page -->
+<div class="page">
+  <div class="page-title">📊 Εβδομαδιαία Επισκόπηση</div>
+  <div class="page-subtitle">Σύνοψη εργασιών ανά ημέρα και βάρδια για την τρέχουσα εβδομάδα</div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow"></div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <span class="filter-label">Βάρδια:</span>
+    <div class="pill-group">
+      <button class="pill active" data-svc="all" onclick="setFilter('all')">Όλες</button>
+      <button class="pill bf" data-svc="breakfast" onclick="setFilter('breakfast')">☀️ Πρωινό</button>
+      <button class="pill lunch" data-svc="lunch" onclick="setFilter('lunch')">🌤 Μεσημέρι</button>
+      <button class="pill dinner" data-svc="dinner" onclick="setFilter('dinner')">🌙 Δείπνο</button>
+    </div>
+    <label class="toggle-incomplete">
+      <input type="checkbox" id="incompleteOnly" onchange="render()">
+      🔴 Μόνο αδολοκλήρωτα
+    </label>
+    <button class="export-btn" onclick="exportAll()">⬆ Εξαγωγή Εβδομάδας</button>
+  </div>
+
+  <!-- Week grid -->
+  <div class="week-grid" id="weekGrid"></div>
+</div>
+
+<script>
+/* ══ DATA ══ */
+const KEY = 'he_v2_shift';
+const DAYS = [
+  {key:'mon', label:'Δευτέρα'},
+  {key:'tue', label:'Τρίτη'},
+  {key:'wed', label:'Τετάρτη'},
+  {key:'thu', label:'Πέμπτη'},
+  {key:'fri', label:'Παρασκευή'},
+  {key:'sat', label:'Σάββατο'},
+  {key:'sun', label:'Κυριακή'},
+];
+const SERVICES = [
+  {key:'breakfast', label:'☀️ Πρωινό', cls:'bf'},
+  {key:'lunch',     label:'🌤 Μεσημέρι', cls:'lunch'},
+  {key:'dinner',    label:'🌙 Δείπνο', cls:'dinner'},
+];
+
+let data = { workers: [], shiftTasks: {} };
+let filterSvc = 'all';
+let openShifts = {}; // track expanded shifts
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if (d) { data.workers = d.workers || []; data.shiftTasks = d.shiftTasks || {}; }
+  } catch(e){}
+}
+
+function shiftKey(day, svc) { return day + '_' + svc; }
+
+function getShiftStats(day, svc) {
+  const k = shiftKey(day, svc);
+  const m = data.shiftTasks[k] || {};
+  let total = 0, done = 0;
+  data.workers.forEach(w => {
+    const tasks = m[w.id] || [];
+    total += tasks.length;
+    done += tasks.filter(t => t.done).length;
+  });
+  return { total, done, pending: total - done };
+}
+
+/* ══ FILTER ══ */
+function setFilter(svc) {
+  filterSvc = svc;
+  document.querySelectorAll('.pill[data-svc]').forEach(p => {
+    p.classList.toggle('active', p.dataset.svc === svc);
+    // restore color class
+    if (p.dataset.svc === 'breakfast') p.classList.toggle('bf', p.dataset.svc === svc);
+    if (p.dataset.svc === 'lunch') p.classList.toggle('lunch', p.dataset.svc === svc);
+    if (p.dataset.svc === 'dinner') p.classList.toggle('dinner', p.dataset.svc === svc);
+  });
+  render();
+}
+
+function toggleShift(key) {
+  openShifts[key] = !openShifts[key];
+  render();
+}
+
+/* ══ STATS ══ */
+function renderStats() {
+  let totalTasks = 0, doneTasks = 0, activeDays = 0;
+  DAYS.forEach(d => {
+    let dayHasTasks = false;
+    SERVICES.forEach(s => {
+      const st = getShiftStats(d.key, s.key);
+      totalTasks += st.total;
+      doneTasks += st.done;
+      if (st.total > 0) dayHasTasks = true;
+    });
+    if (dayHasTasks) activeDays++;
+  });
+  const pct = totalTasks ? Math.round(doneTasks / totalTasks * 100) : 0;
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card gold">
+      <div class="stat-value">${totalTasks}</div>
+      <div class="stat-label">Σύνολο εργασιών</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-value">${doneTasks}</div>
+      <div class="stat-label">Ολοκληρωμένες</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-value">${totalTasks - doneTasks}</div>
+      <div class="stat-label">Εκκρεμείς</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${pct}%</div>
+      <div class="stat-label">Ποσοστό ολοκλήρωσης</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${data.workers.length}</div>
+      <div class="stat-label">Εργαζόμενοι</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${activeDays}</div>
+      <div class="stat-label">Ενεργές ημέρες</div>
+    </div>
+  `;
+}
+
+/* ══ RENDER ══ */
+function render() {
+  renderStats();
+  const incompleteOnly = document.getElementById('incompleteOnly').checked;
+  const svcsToShow = filterSvc === 'all' ? SERVICES : SERVICES.filter(s => s.key === filterSvc);
+  const grid = document.getElementById('weekGrid');
+
+  let html = '';
+  let anyVisible = false;
+
+  DAYS.forEach(d => {
+    // Check if day has any tasks (considering filter)
+    let dayTotal = 0, dayDone = 0;
+    svcsToShow.forEach(s => {
+      const st = getShiftStats(d.key, s.key);
+      dayTotal += st.total;
+      dayDone += st.done;
+    });
+    const dayPending = dayTotal - dayDone;
+
+    if (incompleteOnly && dayPending === 0) return;
+    anyVisible = true;
+
+    const dayBadge = dayTotal === 0
+      ? `<span class="day-badge">Κενή</span>`
+      : dayPending === 0
+        ? `<span class="day-badge done">✓ Ολοκληρώθηκε</span>`
+        : `<span class="day-badge pending">${dayPending} εκκρεμείς</span>`;
+
+    const cardCls = dayTotal === 0 ? '' : dayPending === 0 ? 'all-done' : 'has-pending';
+
+    let shiftsHtml = '';
+    svcsToShow.forEach(s => {
+      const k = shiftKey(d.key, s.key);
+      const m = data.shiftTasks[k] || {};
+      const st = getShiftStats(d.key, s.key);
+
+      if (incompleteOnly && st.pending === 0) return;
+
+      const dotCls = st.total === 0 ? '' : st.pending === 0 ? 'all-done' : 'has-pending';
+      const pct = st.total ? Math.round(st.done / st.total * 100) : 0;
+      const isOpen = !!openShifts[k];
+
+      // Workers in this shift
+      let workersHtml = '';
+      if (data.workers.length === 0) {
+        workersHtml = `<div class="shift-empty">Δεν υπάρχουν εργαζόμενοι</div>`;
+      } else {
+        data.workers.forEach(w => {
+          const tasks = m[w.id] || [];
+          if (incompleteOnly && tasks.filter(t=>!t.done).length === 0) return;
+          const wDone = tasks.filter(t=>t.done).length;
+          const wPending = tasks.length - wDone;
+          const initials = w.name.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
+          const countCls = wPending > 0 ? 'pending' : '';
+          const countLabel = tasks.length === 0 ? 'Καμία εργασία' : `${wDone}/${tasks.length} ✓`;
+
+          const taskItems = tasks.map(t => `
+            <div class="task-mini-item ${t.done ? 'done-task' : ''}">
+              <div class="task-mini-dot ${t.done ? 'done' : ''}"></div>
+              ${t.text}
+            </div>`).join('');
+
+          workersHtml += `
+            <div class="worker-row">
+              <div class="worker-row-name">
+                <div class="worker-mini-avatar">${initials}</div>
+                ${w.name}
+              </div>
+              <div class="worker-task-count ${countCls}">${countLabel}</div>
+            </div>
+            ${tasks.length ? `<div class="task-mini-list">${taskItems}</div>` : ''}`;
+        });
+        if (!workersHtml) {
+          workersHtml = `<div class="shift-empty">Δεν υπάρχουν εκκρεμείς εργασίες</div>`;
+        }
+      }
+
+      shiftsHtml += `
+        <div class="shift-row" onclick="toggleShift('${k}')">
+          <div class="shift-top">
+            <div class="shift-label">
+              <div class="shift-dot ${dotCls}"></div>
+              ${s.label}
+            </div>
+            <div class="shift-count">${st.total === 0 ? 'Κενή' : `${st.done}/${st.total} · ${pct}%`} ${isOpen ? '▲' : '▼'}</div>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill ${st.pending === 0 && st.total > 0 ? 'done' : ''}" style="width:${pct}%"></div>
+          </div>
+          <div class="shift-workers ${isOpen ? 'open' : ''}">
+            ${workersHtml}
+          </div>
+        </div>`;
+    });
+
+    if (!shiftsHtml) return;
+
+    html += `
+      <div class="day-card ${cardCls}">
+        <div class="day-header">
+          <div class="day-name">${d.label}</div>
+          ${dayBadge}
+        </div>
+        ${shiftsHtml}
+      </div>`;
+  });
+
+  if (!html) {
+    html = `<div class="empty-state" style="grid-column:1/-1">
+      <h3>${incompleteOnly ? '🎉 Δεν υπάρχουν εκκρεμείς εργασίες!' : 'Δεν υπάρχουν εργασίες ακόμα'}</h3>
+      <p>${incompleteOnly ? 'Όλες οι εργασίες έχουν ολοκληρωθεί.' : 'Πήγαινε στη σελίδα Εργασίες για να αναθέσεις εργασίες στο προσωπικό.'}</p>
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+/* ══ EXPORT ══ */
+function exportAll() {
+  const incompleteOnly = document.getElementById('incompleteOnly').checked;
+  const svcsToShow = filterSvc === 'all' ? SERVICES : SERVICES.filter(s => s.key === filterSvc);
+  let lines = ['📊 ΕΒΔΟΜΑΔΙΑΙΑ ΕΠΙΣΚΟΠΗΣΗ — Helios & Ella', ''];
+
+  DAYS.forEach(d => {
+    let dayLines = [];
+    svcsToShow.forEach(s => {
+      const k = shiftKey(d.key, s.key);
+      const m = data.shiftTasks[k] || {};
+      const st = getShiftStats(d.key, s.key);
+      if (st.total === 0) return;
+      if (incompleteOnly && st.pending === 0) return;
+
+      dayLines.push(`  ${s.label} (${st.done}/${st.total})`);
+      data.workers.forEach(w => {
+        const tasks = m[w.id] || [];
+        if (!tasks.length) return;
+        if (incompleteOnly && tasks.filter(t=>!t.done).length === 0) return;
+        dayLines.push(`    👤 ${w.name}`);
+        tasks.forEach(t => {
+          if (incompleteOnly && t.done) return;
+          dayLines.push(`      ${t.done ? '✓' : '○'} ${t.text}`);
+        });
+      });
+    });
+    if (dayLines.length) {
+      lines.push(`📅 ${d.label}`);
+      lines.push(...dayLines);
+      lines.push('');
+    }
+  });
+
+  if (lines.length <= 2) {
+    alert('Δεν υπάρχουν εργασίες για εξαγωγή.');
+    return;
+  }
+
+  const text = lines.join('\n');
+  if (navigator.share) {
+    navigator.share({ title: 'Εβδομαδιαία Επισκόπηση', text }).catch(() => copyToClipboard(text));
+  } else {
+    copyToClipboard(text);
+  }
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    alert('✓ Αντιγράφηκε στο πρόχειρο!');
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    alert('✓ Αντιγράφηκε στο πρόχειρο!');
+  });
+}
+
+/* ══ INIT ══ */
+load();
+render();
+
+// Auto-refresh every 30s in case tasks changed in another tab
+setInterval(() => { load(); render(); }, 30000);
+</script>
+</body>
+</html>
