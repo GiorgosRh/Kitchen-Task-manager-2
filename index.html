@@ -813,9 +813,16 @@ function save() {
 }
 
 /* ══ AUTH ══ */
-const PASSWORD = 'helios';
+let ADMIN_PIN = null; // loaded from server
 let isAuthenticated = false;
 let pendingAuthCallback = null;
+
+function loadAdminPinFromServer() {
+  fetch(API_BASE + '/api/admin-pin')
+    .then(r => r.json())
+    .then(data => { if (data.pin) ADMIN_PIN = data.pin; })
+    .catch(() => {}); // silently fail — PIN stays null until loaded
+}
 
 function requireAuth(cb) {
   if (isAuthenticated) { cb(); return; }
@@ -828,7 +835,22 @@ function requireAuth(cb) {
 
 function confirmAuth() {
   const val = document.getElementById('auth-input').value;
-  if (val === PASSWORD) {
+  if (ADMIN_PIN === null) {
+    // PIN not yet loaded from server — try to load and retry
+    fetch(API_BASE + '/api/admin-pin')
+      .then(r => r.json())
+      .then(data => {
+        if (data.pin) ADMIN_PIN = data.pin;
+        confirmAuth();
+      })
+      .catch(() => {
+        document.getElementById('auth-error').style.display = 'block';
+        document.getElementById('auth-input').value = '';
+        document.getElementById('auth-input').focus();
+      });
+    return;
+  }
+  if (val === ADMIN_PIN) {
     isAuthenticated = true;
     const cb = pendingAuthCallback;
     pendingAuthCallback = null;
@@ -1093,6 +1115,7 @@ function selDay(d) { S.day=d; renderTabs(); renderMenu(); renderWorkers(); docum
 function selSvc(s) { S.service=s; renderTabs(); renderMenu(); renderWorkers(); document.getElementById('searchBox').value=''; searchQuery=''; }
 
 /* ══ INIT ══ */
+loadAdminPinFromServer();
 load();
 renderTabs();
 renderMenu();
