@@ -63,7 +63,9 @@ body {
 .btn-outline:hover { background: rgba(255,255,255,0.07); color: white; }
 .btn-gold { background: var(--gold); color: white; }
 .btn-gold:hover { filter: brightness(1.1); }
-.sync-badge { font-size:0.72rem; font-weight:600; padding:4px 10px; border-radius:20px; white-space:nowrap; }
+.sync-badge { font-size:0.72rem; font-weight:600; padding:4px 10px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
+.btn-label-short { display: none; }
+.btn-label-full { display: inline; }
 .sync-badge.syncing { background:rgba(251,191,36,0.15); color:#fbbf24; }
 .sync-badge.synced { background:rgba(74,222,128,0.15); color:#4ade80; }
 .sync-badge.offline { background:rgba(248,113,113,0.15); color:#f87171; }
@@ -400,6 +402,41 @@ body {
   .menu-panel { height: 340px; border-right: none; border-bottom: 2px solid var(--line); }
   .tasks-panel { padding: 16px; }
 }
+
+/* ── MOBILE (≤ 520px) ── */
+@media (max-width: 520px) {
+  .header {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .brand h1 { font-size: 1rem; }
+  .brand p { display: none; }
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: flex-start;
+  }
+  #lastUpdated { display: none; }
+  .btn-sm {
+    font-size: 0.72rem;
+    padding: 5px 9px;
+  }
+  .sync-badge { font-size: 0.68rem; padding: 3px 8px; }
+  .controls {
+    padding: 0 12px 10px;
+    gap: 8px;
+  }
+  .pill { font-size: 0.72rem; padding: 4px 9px; }
+  .layout { height: auto; }
+  .menu-panel { height: 300px; }
+  .tasks-panel { padding: 10px; }
+  .workers-grid { grid-template-columns: 1fr !important; }
+  .worker-card { margin-bottom: 10px; }
+  .btn-label-full { display: none; }
+  .btn-label-short { display: inline; }
+}
 </style>
 </head>
 <body>
@@ -417,10 +454,10 @@ body {
     <span id="syncBadge" class="sync-badge"></span>
     <span id="lastUpdated" style="font-size:0.68rem;color:rgba(255,255,255,0.35);white-space:nowrap;"></span>
     <button class="btn-sm btn-outline" onclick="manualRefresh()" title="Ανανέωση" style="padding:5px 10px;font-size:0.8rem;">↻</button>
-    <button class="btn-sm btn-outline" onclick="window.print()">🖨 Εκτύπωση</button>
-    <button class="btn-sm btn-outline" onclick="clearAll()">↺ Καθαρισμός</button>
-    <a href="overview.html" class="btn-sm btn-outline" style="text-decoration:none;">📊 Επισκόπηση</a>
-    <a href="allergens.html" class="btn-sm btn-gold" style="text-decoration:none;">⚠️ Αλλεργιογόνα</a>
+    <button class="btn-sm btn-outline" onclick="window.print()" title="Εκτύπωση">🖨</button>
+    <button class="btn-sm btn-outline" onclick="clearAll()" title="Καθαρισμός">↺</button>
+    <a href="overview.html" class="btn-sm btn-outline" style="text-decoration:none;" title="Επισκόπηση"><span class="btn-label-full">📊 Επισκόπηση</span><span class="btn-label-short">📊</span></a>
+    <a href="allergens.html" class="btn-sm btn-gold" style="text-decoration:none;" title="Αλλεργιογόνα"><span class="btn-label-full">⚠️ Αλλεργιογόνα</span><span class="btn-label-short">⚠️</span></a>
   </div>
 </div>
 
