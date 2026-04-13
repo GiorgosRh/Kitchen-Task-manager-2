@@ -1021,7 +1021,7 @@ function toggleTheme() {
 })();
 
 /* ══ AUTH ══ */
-const AUTH_PASSWORD = 'Ella';
+const AUTH_PASSWORD = '1234'; // matches app admin PIN
 let isAuthenticated = false;
 let pendingAuthCallback = null;
 
@@ -1054,26 +1054,66 @@ function cancelAuth() {
   document.getElementById('auth-overlay').style.display = 'none';
 }
 
-/* ══ EDITABLE DISH STATE ══ */
-const ALLERGEN_STORAGE_KEY = 'he_allergens_v1';
+/* ══ SERVER SYNC ══ */
+const SERVER_BASE = 'https://helioskitch-mpdj7fvp.manus.space';
+const ALLERGEN_STORAGE_KEY = 'he_allergens_v2';
 
 let DISH_STATE = DISHES.map(([name, cat, al]) => [name, cat, {...al}]);
 
-function loadDishState() {
+// Load overrides from localStorage cache, then fetch from server
+async function loadDishState() {
+  // 1. Apply local cache immediately for fast display
   try {
     const saved = JSON.parse(localStorage.getItem(ALLERGEN_STORAGE_KEY));
-    if (saved) {
-      DISH_STATE = DISH_STATE.map(([name, cat, al]) =>
-        [name, cat, Object.prototype.hasOwnProperty.call(saved, name) ? {...saved[name]} : al]
-      );
-    }
+    if (saved) applyOverrides(saved);
   } catch(e) {}
+
+  // 2. Fetch from server and merge
+  try {
+    const res = await fetch(SERVER_BASE + '/api/allergens');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.overrides) {
+        // Convert server format (array of keys) to site format (object map)
+        const serverMap = {};
+        Object.entries(data.overrides).forEach(([dishName, keys]) => {
+          const obj = {};
+          keys.forEach(k => { obj[k] = 1; });
+          serverMap[dishName] = obj;
+        });
+        applyOverrides(serverMap);
+        // Update local cache
+        try { localStorage.setItem(ALLERGEN_STORAGE_KEY, JSON.stringify(serverMap)); } catch(e) {}
+      }
+    }
+  } catch(e) { console.warn('Server sync failed, using local cache', e); }
+
+  renderLegend();
+  renderMain();
+  updateStats(DISH_STATE.length);
+}
+
+function applyOverrides(overrides) {
+  DISH_STATE = DISH_STATE.map(([name, cat, al]) =>
+    [name, cat, Object.prototype.hasOwnProperty.call(overrides, name) ? {...overrides[name]} : al]
+  );
 }
 
 function saveDishState() {
   const data = {};
   DISH_STATE.forEach(([name, cat, al]) => { data[name] = al; });
   try { localStorage.setItem(ALLERGEN_STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+async function pushDishToServer(dishName, allergenObj) {
+  const keys = Object.keys(allergenObj);
+  try {
+    await fetch(SERVER_BASE + '/api/allergens', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dish: dishName, allergens: keys }),
+    });
+  } catch(e) { console.warn('Failed to push to server:', e); }
 }
 
 function toggleDishAllergen(idx, key) {
@@ -1083,6 +1123,7 @@ function toggleDishAllergen(idx, key) {
     if (dish[2][key]) delete dish[2][key];
     else dish[2][key] = 1;
     saveDishState();
+    pushDishToServer(dish[0], dish[2]);
     renderMain();
   });
 }
@@ -1092,6 +1133,8 @@ function resetToDefaults() {
     if (!confirm('Επαναφορά όλων των αλλεργιογόνων στις αρχικές τιμές;')) return;
     localStorage.removeItem(ALLERGEN_STORAGE_KEY);
     DISH_STATE = DISHES.map(([name, cat, al]) => [name, cat, {...al}]);
+    // Push empty overrides to server for each dish that was modified
+    // (just reload from server next time)
     renderMain();
   });
 }
@@ -1276,10 +1319,12 @@ function renderAllergenView() {
 }
 
 /* ══ INIT ══ */
-loadDishState();
+// Show initial state from static data immediately, then update from server
 renderLegend();
 renderMain();
 updateStats(DISH_STATE.length);
+// Then load overrides (async)
+loadDishState();
 </script>
 </body>
 </html>
