@@ -1082,6 +1082,7 @@ function toggleTheme() {
 /* ══ AUTH ══ */
 let AUTH_PASSWORD = '1234'; // loaded from server on init
 let isAuthenticated = false;
+let SESSION_SNAPSHOT = null; // deep copy of DISH_STATE at admin login time
 let pendingAuthCallback = null;
 
 // Load the current admin PIN from the server so it stays in sync with the app
@@ -1108,6 +1109,8 @@ function confirmAuth() {
   const val = document.getElementById('auth-input').value;
   if (val === AUTH_PASSWORD) {
     isAuthenticated = true;
+    // Take a deep snapshot of DISH_STATE at login time for session-based undo
+    SESSION_SNAPSHOT = DISH_STATE.map(([name, cat, al, meal]) => [name, cat, {...al}, meal || '']);
     const cb = pendingAuthCallback;
     pendingAuthCallback = null;
     document.getElementById('auth-overlay').style.display = 'none';
@@ -1284,17 +1287,42 @@ function toggleDishAllergen(idx, key) {
 }
 
 function resetToDefaults() {
-  requireAuth(() => {
-    if (!confirm('Επαναφορά όλων των αλλεργιογόνων στις αρχικές τιμές;\nΑυτό θα σβήσει ΟΛΕΣ τις αλλαγές και από τον server.')) return;
-    // 1. Clear local storage
-    localStorage.removeItem(ALLERGEN_STORAGE_KEY);
-    // 2. Clear server overrides so app also resets
-    fetch(SERVER_BASE + '/api/allergens', { method: 'DELETE' })
-      .catch(function(e) { console.warn('Server reset failed', e); });
-    // 3. Reset local state to bundled defaults
-    DISH_STATE = DISHES.map(([name, cat, al]) => [name, cat, {...al}]);
+  requireAuth(async () => {
+    if (!SESSION_SNAPSHOT) {
+      alert('Δεν υπάρχει snapshot συνεδρίας. Κάνε logout και ξανά login για να ορίσεις σημείο επαναφοράς.');
+      return;
+    }
+    if (!confirm('Επαναφορά στην κατάσταση κατά τη σύνδεσή σου;\nΌλες οι αλλαγές αυτής της συνεδρίας θα αναιρεθούν.')) return;
+    // 1. Restore DISH_STATE from session snapshot
+    DISH_STATE = SESSION_SNAPSHOT.map(([name, cat, al, meal]) => [name, cat, {...al}, meal || '']);
+    // 2. Build overrides map from snapshot (only dishes that differ from bundled defaults)
+    const snapshotOverrides = {};
+    SESSION_SNAPSHOT.forEach(([name, cat, al]) => {
+      snapshotOverrides[name] = Object.keys(al);
+    });
+    // 3. Save to local storage
+    const localData = {};
+    DISH_STATE.forEach(([name, cat, al]) => { localData[name] = al; });
+    try { localStorage.setItem(ALLERGEN_STORAGE_KEY, JSON.stringify(localData)); } catch(e) {}
+    // 4. Push snapshot overrides to server (replaces all current overrides)
+    try {
+      // First clear all server overrides
+      await fetch(SERVER_BASE + '/api/allergens', { method: 'DELETE' });
+      // Then push each override from the snapshot
+      const promises = Object.entries(snapshotOverrides).map(([dishName, keys]) =>
+        fetch(SERVER_BASE + '/api/allergens', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dish: dishName, allergens: keys }),
+        }).catch(e => console.warn('Failed to push override for', dishName, e))
+      );
+      await Promise.all(promises);
+    } catch(e) { console.warn('Server reset to snapshot failed', e); }
     renderMain();
     updateStats(DISH_STATE.length);
+    // Show confirmation
+    const btn = document.querySelector('.reset-btn') || document.querySelector('[onclick*="resetToDefaults"]');
+    if (btn) { const orig = btn.textContent; btn.textContent = '✓ Επαναφορά!'; setTimeout(() => { btn.textContent = orig; }, 2000); }
   });
 }
 
