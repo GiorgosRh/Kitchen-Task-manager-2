@@ -785,14 +785,65 @@ function fetchFromServer(silent) {
     .then(r => r.json())
     .then(data => {
       let changed = false;
+
+      // ── Handle LEGACY site format (workers + shiftTasks separate) ──
       if (data.workers && data.workers.length) {
         const newW = JSON.stringify(data.workers);
         if (newW !== JSON.stringify(S.workers)) { S.workers = data.workers; changed = true; }
       }
+
+      // ── Handle APP format: shiftTasks keys are "shift-day" with value [{id,name,tasks:[]}] ──
+      // Convert to site format: workers list + shiftTasks {day_shift: {wid: [tasks]}}
       if (data.shiftTasks && Object.keys(data.shiftTasks).length) {
-        const newT = JSON.stringify(data.shiftTasks);
-        if (newT !== JSON.stringify(S.shiftTasks)) { S.shiftTasks = data.shiftTasks; changed = true; }
+        const appKeys = Object.keys(data.shiftTasks);
+        const isAppFormat = appKeys.some(k => /^(breakfast|lunch|dinner)-/.test(k));
+
+        if (isAppFormat) {
+          // Build workers list (unique by name across all shifts)
+          const workerMap = {}; // name -> {id, name}
+          const newShiftTasks = {};
+
+          for (const [shiftKey, workersArr] of Object.entries(data.shiftTasks)) {
+            if (!Array.isArray(workersArr)) continue;
+            // shiftKey = "breakfast-mon" -> site key = "mon_breakfast"
+            const parts = shiftKey.split('-');
+            if (parts.length < 2) continue;
+            const shift = parts[0]; // breakfast/lunch/dinner
+            const day = parts.slice(1).join('-'); // mon/tue/etc
+            const siteKey = day + '_' + shift;
+
+            if (!newShiftTasks[siteKey]) newShiftTasks[siteKey] = {};
+
+            for (const worker of workersArr) {
+              if (!worker || !worker.id || !worker.name) continue;
+              // Register worker
+              if (!workerMap[worker.name]) {
+                workerMap[worker.name] = { id: worker.id, name: worker.name };
+              }
+              // Map tasks to site format: {wid: [{id,text,tag,done}]}
+              const wid = workerMap[worker.name].id;
+              if (worker.tasks && worker.tasks.length) {
+                newShiftTasks[siteKey][wid] = worker.tasks.map(t => ({
+                  id: t.id, text: t.text, tag: t.tag || '', done: !!t.done
+                }));
+              }
+            }
+          }
+
+          const newWorkers = Object.values(workerMap);
+          if (newWorkers.length > 0) {
+            const newW = JSON.stringify(newWorkers);
+            if (newW !== JSON.stringify(S.workers)) { S.workers = newWorkers; changed = true; }
+          }
+          const newT = JSON.stringify(newShiftTasks);
+          if (newT !== JSON.stringify(S.shiftTasks)) { S.shiftTasks = newShiftTasks; changed = true; }
+        } else {
+          // Legacy site format
+          const newT = JSON.stringify(data.shiftTasks);
+          if (newT !== JSON.stringify(S.shiftTasks)) { S.shiftTasks = data.shiftTasks; changed = true; }
+        }
       }
+
       if (changed) {
         localStorage.setItem(KEY, JSON.stringify({workers:S.workers, shiftTasks:S.shiftTasks}));
         renderTabs(); renderMenu(); renderWorkers();
