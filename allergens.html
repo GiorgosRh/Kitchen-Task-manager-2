@@ -1055,17 +1055,28 @@ function cancelAuth() {
 const SERVER_BASE = 'https://helioskitch-mpdj7fvp.manus.space';
 const ALLERGEN_STORAGE_KEY = 'he_allergens_v2';
 
+// DISH_STATE is initialized from server (see loadDishState below)
+// Falls back to the hardcoded DISHES array if server is unreachable
 let DISH_STATE = DISHES.map(([name, cat, al]) => [name, cat, {...al}]);
 
-// Load overrides from localStorage cache, then fetch from server
+// Load dishes + overrides from server (single source of truth)
 async function loadDishState() {
-  // 1. Apply local cache immediately for fast display
+  // 1. Try to load static dish list from server (auto-synced with app)
   try {
-    const saved = JSON.parse(localStorage.getItem(ALLERGEN_STORAGE_KEY));
-    if (saved) applyOverrides(saved);
-  } catch(e) {}
+    const res = await fetch(SERVER_BASE + '/api/dishes');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.dishes && data.dishes.length > 0) {
+        // Replace DISH_STATE with server data
+        DISH_STATE = data.dishes.map(d => [d.name, d.category, {...d.allergens}]);
+      }
+    }
+  } catch(e) {
+    console.warn('Could not load dishes from server, using bundled data', e);
+    // Keep DISH_STATE as initialized from bundled DISHES array
+  }
 
-  // 2. Fetch from server and merge
+  // 2. Apply allergen overrides from server (admin edits)
   try {
     const res = await fetch(SERVER_BASE + '/api/allergens');
     if (res.ok) {
@@ -1083,7 +1094,7 @@ async function loadDishState() {
         try { localStorage.setItem(ALLERGEN_STORAGE_KEY, JSON.stringify(serverMap)); } catch(e) {}
       }
     }
-  } catch(e) { console.warn('Server sync failed, using local cache', e); }
+  } catch(e) { console.warn('Server sync failed for overrides', e); }
 
   renderLegend();
   renderMain();
