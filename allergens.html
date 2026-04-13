@@ -1311,9 +1311,30 @@ async function submitChangePin() {
 const SERVER_BASE = 'https://helioskitch-mpdj7fvp.manus.space';
 const ALLERGEN_STORAGE_KEY = 'he_allergens_v2';
 
+// Key mapping: static DISHES uses canonical app keys, site ALLERGENS uses site keys
+const SITE_KEY_MAP = {
+  milk: 'dairy', dairy: 'dairy',
+  soya: 'soy', soy: 'soy',
+  treeNuts: 'nuts', nuts: 'nuts',
+  sulphites: 'sulph', sulph: 'sulph',
+  crustaceans: 'shell', shell: 'shell',
+  molluscs: 'mollusc', mollusc: 'mollusc',
+  gluten: 'gluten', eggs: 'eggs', fish: 'fish',
+  peanuts: 'peanuts', celery: 'celery', mustard: 'mustard',
+  sesame: 'sesame', lupin: 'lupin',
+};
+function mapAllergenKeys(allergens) {
+  const out = {};
+  Object.keys(allergens).forEach(k => {
+    const mapped = SITE_KEY_MAP[k] || k;
+    out[mapped] = 1;
+  });
+  return out;
+}
+
 // DISH_STATE is initialized from server (see loadDishState below)
 // Falls back to the hardcoded DISHES array if server is unreachable
-let DISH_STATE = DISHES.map(d => [d.name, d.category, {...d.allergens}, d.meal || '']);
+let DISH_STATE = DISHES.map(d => [d.name, d.category, mapAllergenKeys(d.allergens), d.meal || '']);
 
 // Load dishes + overrides from server (single source of truth)
 async function loadDishState() {
