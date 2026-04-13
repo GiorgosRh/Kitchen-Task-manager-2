@@ -160,6 +160,19 @@ body {
 }
 .view-btn.active { background: #ef4444; color: white; }
 
+.meal-tabs { display: flex; gap: 6px; padding: 8px 16px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.meal-btn { padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 5px; }
+.meal-btn:hover { color: var(--text); border-color: var(--text); }
+.meal-btn.active { background: #ef4444; color: white; border-color: #ef4444; }
+body.light .meal-btn { background: #f3f4f6; color: #6b7280; }
+body.light .meal-btn.active { background: #ef4444; color: white; }
+.day-filter-row { display: flex; gap: 5px; padding: 6px 16px; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; flex-wrap: nowrap; align-items: center; }
+.day-btn { padding: 4px 10px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 44px; }
+.day-btn:hover { color: var(--text); border-color: var(--text); }
+.day-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+.day-btn .day-theme { font-size: 0.6rem; opacity: 0.8; }
+body.light .day-btn { background: #f3f4f6; color: #6b7280; }
+body.light .day-btn.active { background: #3b82f6; color: white; }
 .filter-clear {
   font-family: 'Outfit', sans-serif; font-size: 0.75rem; font-weight: 600;
   color: var(--muted); background: none; border: none; cursor: pointer; padding: 4px 8px;
@@ -354,6 +367,26 @@ tbody tr.hidden-row { display: none; }
     <button class="view-btn" onclick="setView('allergen', this)">⚠️ Ανά Αλλ.</button>
   </div>
   <button class="filter-clear" onclick="clearFilters()">✕ Καθαρισμός</button>
+</div>
+<!-- Meal Tabs -->
+<div class="meal-tabs">
+  <button class="meal-btn active" data-meal="all" onclick="setMeal('all')">🍽️ Όλα</button>
+  <button class="meal-btn" data-meal="breakfast" onclick="setMeal('breakfast')">🌅 Πρωινό</button>
+  <button class="meal-btn" data-meal="lunch" onclick="setMeal('lunch')">☀️ Μεσημέρι</button>
+  <button class="meal-btn" data-meal="dinner" onclick="setMeal('dinner')">🌙 Δείπνο</button>
+</div>
+<!-- Day Filter (shown for dinner/lunch) -->
+<div class="day-filter-row" id="dayFilterRow">
+  <button class="day-btn active" data-day="all" onclick="setDay('all')">📅<span class="day-theme">Όλες</span></button>
+  <button class="day-btn" data-day="mon" onclick="setDay('mon')">🏛️<span class="day-theme">ΔΕΥ Greek</span></button>
+  <button class="day-btn" data-day="tue" onclick="setDay('tue')">🌎<span class="day-theme">ΤΡΙ S.Am.</span></button>
+  <button class="day-btn" data-day="wed" onclick="setDay('wed')">🌍<span class="day-theme">ΤΕΤ Intl</span></button>
+  <button class="day-btn" data-day="thu" onclick="setDay('thu')">🥢<span class="day-theme">ΠΕΜ Asian</span></button>
+  <button class="day-btn" data-day="fri" onclick="setDay('fri')">🔥<span class="day-theme">ΠΑΡ BBQ</span></button>
+  <button class="day-btn" data-day="sat" onclick="setDay('sat')">🌊<span class="day-theme">ΣΑΒ Rho.</span></button>
+  <button class="day-btn" data-day="sun" onclick="setDay('sun')">🍝<span class="day-theme">ΚΥΡ Ital.</span></button>
+</div>
+<div style="display:none"><!-- dummy to fix unclosed div -->
 </div>
 
 <!-- Stats -->
@@ -1171,7 +1204,7 @@ const ALLERGEN_STORAGE_KEY = 'he_allergens_v2';
 
 // DISH_STATE is initialized from server (see loadDishState below)
 // Falls back to the hardcoded DISHES array if server is unreachable
-let DISH_STATE = DISHES.map(([name, cat, al]) => [name, cat, {...al}]);
+let DISH_STATE = DISHES.map(d => [d.name, d.category, {...d.allergens}, d.meal || '']);
 
 // Load dishes + overrides from server (single source of truth)
 async function loadDishState() {
@@ -1182,7 +1215,7 @@ async function loadDishState() {
       const data = await res.json();
       if (data.dishes && data.dishes.length > 0) {
         // Replace DISH_STATE with server data
-        DISH_STATE = data.dishes.map(d => [d.name, d.category, {...d.allergens}]);
+        DISH_STATE = data.dishes.map(d => [d.name, d.category, {...d.allergens}, d.meal || '']);
       }
     }
   } catch(e) {
@@ -1268,6 +1301,28 @@ function resetToDefaults() {
 /* ══ STATE ══ */
 let activeAllergens = new Set();
 let searchQ = '';
+let activeMeal = 'all';   // 'all' | 'breakfast' | 'lunch' | 'dinner'
+let activeDay  = 'all';   // 'all' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+
+const DAY_CATEGORY_PREFIX = {
+  mon: 'ΔΕΥΤΕΡΑ',
+  tue: 'ΤΡΙΤΗ',
+  wed: 'ΤΕΤΑΡΤΗ',
+  thu: 'ΠΕΜΠΤΗ',
+  fri: 'ΠΑΡΑΣΚΕΥΗ',
+  sat: 'ΣΑΒΒΑΤΟ',
+  sun: 'ΚΥΡΙΑΚΗ',
+};
+
+function isDailyCategory(cat) {
+  const u = cat.toUpperCase();
+  return u.includes('ΚΑΘΗΜΕΡΙΝΌ') || u.includes('PLAIN SALADS') ||
+    u.includes('ΣΤΑΘΜΟΣ ΨΩΜΙΟΥ') || u.includes('ACTION STATION') ||
+    u.includes('GARNISH') || u.includes('GRILL') || u.includes('PASTA') ||
+    u.includes('PIZZA') || u.includes('ΚΡΕΑΣ') || u.includes('ΧΟΡΤΟΦΑΓΙΚΑ') ||
+    u.includes('ΨΑΡΙ') || u.includes('ΣΟΥΠΑ') || u.includes('DESSERTS') ||
+    u.includes('ΣΑΛΑΤΕΣ, ΣΑΛΤΣΕΣ') || u.includes('PLAIN SALADS / SAUCES');
+}
 let currentView = 'table';
 
 /* ══ LEGEND CHIPS ══ */
@@ -1290,17 +1345,45 @@ function toggleAllergen(key) {
   applyFilters();
 }
 
+function setMeal(meal) {
+  activeMeal = meal;
+  document.querySelectorAll('.meal-btn').forEach(b => b.classList.toggle('active', b.dataset.meal === meal));
+  // Show/hide day filter row
+  const dayRow = document.getElementById('dayFilterRow');
+  if (dayRow) dayRow.style.display = (meal === 'dinner' || meal === 'lunch' || meal === 'all') ? 'flex' : 'none';
+  applyFilters();
+}
+function setDay(day) {
+  activeDay = day;
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.toggle('active', b.dataset.day === day));
+  applyFilters();
+}
 function clearFilters() {
   activeAllergens.clear();
   searchQ = '';
+  activeMeal = 'all';
+  activeDay = 'all';
   document.getElementById('searchInput').value = '';
+  document.querySelectorAll('.meal-btn').forEach(b => b.classList.toggle('active', b.dataset.meal === 'all'));
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.toggle('active', b.dataset.day === 'all'));
   renderLegend();
   applyFilters();
 }
 
 /* ══ FILTER LOGIC ══ */
 function visibleDishes() {
-  return DISH_STATE.filter(([name, cat, allergens]) => {
+  return DISH_STATE.filter(([name, cat, allergens, meal]) => {
+    // Meal filter
+    if (activeMeal !== 'all' && meal !== activeMeal) return false;
+    // Day filter (only for dinner/lunch when a specific day is selected)
+    if (activeDay !== 'all') {
+      if (meal === 'breakfast') {
+        // breakfast is not day-specific — always show
+      } else if (!isDailyCategory(cat)) {
+        const prefix = DAY_CATEGORY_PREFIX[activeDay];
+        if (!cat.toUpperCase().startsWith(prefix)) return false;
+      }
+    }
     const matchSearch = !searchQ || name.toLowerCase().includes(searchQ) || cat.toLowerCase().includes(searchQ);
     const matchAllergen = activeAllergens.size === 0 || [...activeAllergens].every(k => allergens[k]);
     return matchSearch && matchAllergen;
