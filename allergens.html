@@ -1270,6 +1270,22 @@ function renderTable() {
   </div>`;
 }
 
+/* CATEGORY COLOR MAPPING — matches app worker-colors.ts palette */
+const CATEGORY_COLORS = {
+  '☀️ Πρωινό': '#b8860b',      // gold
+  '☀️ Μεσημεριανό': '#3d5a2e',  // dark green
+  '🌙 Δείπνο': '#1a5276',       // navy
+  '🌿': '#2d6a4f',              // emerald (herbs/veg)
+  '🍷': '#7d3c98',              // purple (wine/drinks)
+};
+
+function getCategoryColor(cat) {
+  for (const [prefix, color] of Object.entries(CATEGORY_COLORS)) {
+    if (cat.startsWith(prefix)) return color;
+  }
+  return '#6b7280'; // muted fallback
+}
+
 /* CARDS */
 function renderCard([name, cat, allergens], idx) {
   const activeTags = ALLERGENS.filter(a => allergens[a.key]).map(a =>
@@ -1283,9 +1299,10 @@ function renderCard([name, cat, allergens], idx) {
       title="Προσθήκη: ${a.label}" style="opacity:0.22;font-size:0.85rem;">${a.ico}</span>`
   ).join('');
 
-  return `<div class="dish-card" data-dish="${name}">
+  const catColor = getCategoryColor(cat);
+  return `<div class="dish-card" data-dish="${name}" style="border-left:4px solid ${catColor}">
     <div class="card-name">${name}</div>
-    <div class="card-cat">${cat}</div>
+    <div class="card-cat" style="color:${catColor}aa">${cat}</div>
     <div class="card-allergens">
       ${activeTags || '<span class="no-allergens">Χωρίς γνωστά αλλεργιογόνα</span>'}
     </div>
