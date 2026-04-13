@@ -316,6 +316,7 @@ body {
 <script>
 /* ══ DATA ══ */
 const KEY = 'he_v2_shift';
+const API_BASE = 'https://helioskitch-mpdj7fvp.manus.space';
 const DAYS = [
   {key:'mon', label:'Δευτέρα'},
   {key:'tue', label:'Τρίτη'},
@@ -336,10 +337,20 @@ let filterSvc = 'all';
 let openShifts = {}; // track expanded shifts
 
 function load() {
+  // Load from localStorage first (instant)
   try {
     const d = JSON.parse(localStorage.getItem(KEY));
     if (d) { data.workers = d.workers || []; data.shiftTasks = d.shiftTasks || {}; }
   } catch(e){}
+  // Then pull from server
+  fetch(API_BASE + '/api/kitchen')
+    .then(r => r.json())
+    .then(d => {
+      if (d.workers && d.workers.length) data.workers = d.workers;
+      if (d.shiftTasks && Object.keys(d.shiftTasks).length) data.shiftTasks = d.shiftTasks;
+      render();
+    })
+    .catch(() => {});
 }
 
 function shiftKey(day, svc) { return day + '_' + svc; }
@@ -597,8 +608,17 @@ function copyToClipboard(text) {
 load();
 render();
 
-// Auto-refresh every 30s in case tasks changed in another tab
-setInterval(() => { load(); render(); }, 30000);
+// Auto-refresh every 30s — pull from server
+setInterval(() => {
+  fetch(API_BASE + '/api/kitchen')
+    .then(r => r.json())
+    .then(d => {
+      if (d.workers && d.workers.length) data.workers = d.workers;
+      if (d.shiftTasks && Object.keys(d.shiftTasks).length) data.shiftTasks = d.shiftTasks;
+      render();
+    })
+    .catch(() => {});
+}, 30000);
 </script>
 </body>
 </html>

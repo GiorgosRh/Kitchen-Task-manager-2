@@ -63,6 +63,10 @@ body {
 .btn-outline:hover { background: rgba(255,255,255,0.07); color: white; }
 .btn-gold { background: var(--gold); color: white; }
 .btn-gold:hover { filter: brightness(1.1); }
+.sync-badge { font-size:0.72rem; font-weight:600; padding:4px 10px; border-radius:20px; white-space:nowrap; }
+.sync-badge.syncing { background:rgba(251,191,36,0.15); color:#fbbf24; }
+.sync-badge.synced { background:rgba(74,222,128,0.15); color:#4ade80; }
+.sync-badge.offline { background:rgba(248,113,113,0.15); color:#f87171; }
 
 /* ── CONTROLS ── */
 .controls {
@@ -410,6 +414,7 @@ body {
     </div>
   </div>
   <div class="header-actions">
+    <span id="syncBadge" class="sync-badge"></span>
     <button class="btn-sm btn-outline" onclick="window.print()">🖨 Εκτύπωση</button>
     <button class="btn-sm btn-outline" onclick="clearAll()">↺ Καθαρισμός</button>
     <a href="overview.html" class="btn-sm btn-outline" style="text-decoration:none;">📊 Επισκόπηση</a>
@@ -704,6 +709,8 @@ let S = {
   shiftTasks: {},
 };
 const KEY = 'he_v2_shift';
+const API_BASE = 'https://helioskitch-mpdj7fvp.manus.space';
+let syncTimer = null;
 
 /** Returns the task map for the currently selected day+meal */
 function currentShiftKey() { return S.day + '_' + S.service; }
@@ -713,27 +720,58 @@ function currentTasks() {
   return S.shiftTasks[k];
 }
 
+/* ── Sync status badge ── */
+function setSyncStatus(status) {
+  const el = document.getElementById('syncBadge');
+  if (!el) return;
+  const map = { syncing: '↻ Συγχρονισμός...', synced: '✓ Συγχρονίστηκε', offline: '⚡ Offline' };
+  el.textContent = map[status] || '';
+  el.className = 'sync-badge ' + status;
+}
+
 function load() {
+  // Load from localStorage first (instant)
   try {
     const d = JSON.parse(localStorage.getItem(KEY));
-    if (d) {
-      S.workers = d.workers || [];
-      S.shiftTasks = d.shiftTasks || {};
-    }
-    // Migrate old format (he_simple_v1) if present
+    if (d) { S.workers = d.workers || []; S.shiftTasks = d.shiftTasks || {}; }
+    // Migrate old format
     const old = JSON.parse(localStorage.getItem('he_simple_v1'));
     if (old && old.workers && old.workers.length && !S.workers.length) {
       S.workers = old.workers;
-      // Place old tasks under mon_breakfast as a best-effort migration
       S.shiftTasks['mon_breakfast'] = old.tasks || {};
-      save();
     }
   } catch(e){}
   const today = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
   S.day = today;
+  // Then pull from server (async)
+  setSyncStatus('syncing');
+  fetch(API_BASE + '/api/kitchen')
+    .then(r => r.json())
+    .then(data => {
+      if (data.workers && data.workers.length) S.workers = data.workers;
+      if (data.shiftTasks && Object.keys(data.shiftTasks).length) S.shiftTasks = data.shiftTasks;
+      localStorage.setItem(KEY, JSON.stringify({workers:S.workers, shiftTasks:S.shiftTasks}));
+      renderTabs(); renderMenu(); renderWorkers();
+      setSyncStatus('synced');
+    })
+    .catch(() => setSyncStatus('offline'));
 }
+
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify({workers:S.workers, shiftTasks:S.shiftTasks})); } catch(e){}
+  // Debounce push to server (500ms)
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    setSyncStatus('syncing');
+    fetch(API_BASE + '/api/kitchen', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({workers:S.workers, shiftTasks:S.shiftTasks})
+    })
+    .then(r => r.json())
+    .then(() => setSyncStatus('synced'))
+    .catch(() => setSyncStatus('offline'));
+  }, 500);
 }
 
 /* ══ AUTH ══ */
