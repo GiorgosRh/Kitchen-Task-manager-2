@@ -438,7 +438,10 @@ body {
   <!-- RIGHT: Tasks -->
   <div class="tasks-panel">
     <div class="tasks-header">
-      <div class="tasks-title">👥 Ομάδα &amp; Εργασίες</div>
+      <div>
+        <div class="tasks-title">👥 Ομάδα &amp; Εργασίες</div>
+        <div id="shiftContextLabel" style="font-size:0.75rem;color:var(--gold);margin-top:2px;font-style:italic;"></div>
+      </div>
       <button class="add-worker-btn" onclick="openAddWorker()">+ Προσθήκη Ατόμου</button>
     </div>
     <div class="workers-grid" id="workersGrid"></div>
@@ -696,20 +699,40 @@ let S = {
   day: 'mon',
   service: 'breakfast',
   workers: [],  // {id, name}
-  tasks: {},    // workerId => [{id, text, tag, done}]
+  // tasks keyed by "day_meal" => { workerId => [{id, text, tag, done}] }
+  shiftTasks: {},
 };
-const KEY = 'he_simple_v1';
+const KEY = 'he_v2_shift';
+
+/** Returns the task map for the currently selected day+meal */
+function currentShiftKey() { return S.day + '_' + S.service; }
+function currentTasks() {
+  const k = currentShiftKey();
+  if (!S.shiftTasks[k]) S.shiftTasks[k] = {};
+  return S.shiftTasks[k];
+}
 
 function load() {
   try {
     const d = JSON.parse(localStorage.getItem(KEY));
-    if (d) { S.workers = d.workers||[]; S.tasks = d.tasks||{}; }
+    if (d) {
+      S.workers = d.workers || [];
+      S.shiftTasks = d.shiftTasks || {};
+    }
+    // Migrate old format (he_simple_v1) if present
+    const old = JSON.parse(localStorage.getItem('he_simple_v1'));
+    if (old && old.workers && old.workers.length && !S.workers.length) {
+      S.workers = old.workers;
+      // Place old tasks under mon_breakfast as a best-effort migration
+      S.shiftTasks['mon_breakfast'] = old.tasks || {};
+      save();
+    }
   } catch(e){}
   const today = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
   S.day = today;
 }
 function save() {
-  try { localStorage.setItem(KEY, JSON.stringify({workers:S.workers,tasks:S.tasks})); } catch(e){}
+  try { localStorage.setItem(KEY, JSON.stringify({workers:S.workers, shiftTasks:S.shiftTasks})); } catch(e){}
 }
 
 /* ══ AUTH ══ */
@@ -790,6 +813,12 @@ const COLORS = ['wc0','wc1','wc2','wc3','wc4','wc5','wc6','wc7'];
 
 function renderWorkers() {
   const el = document.getElementById('workersGrid');
+  const shiftMap = currentTasks();
+  // Shift context badge
+  const MEAL_LABELS = {breakfast:'☀️ Πρωινό', lunch:'🌤 Μεσημέρι', dinner:'🌙 Δείπνο'};
+  const DAY_LABELS = {mon:'Δευτέρα',tue:'Τρίτη',wed:'Τετάρτη',thu:'Πέμπτη',fri:'Παρασκευή',sat:'Σάββατο',sun:'Κυριακή'};
+  const shiftLabel = `${MEAL_LABELS[S.service] || S.service} · ${DAY_LABELS[S.day] || S.day}`;
+
   if (!S.workers.length) {
     el.innerHTML = `<div class="empty-workers">
       <h3>Δεν υπάρχουν μέλη ομάδας</h3>
@@ -798,7 +827,7 @@ function renderWorkers() {
     return;
   }
   el.innerHTML = S.workers.map((w, wi) => {
-    const wTasks = S.tasks[w.id] || [];
+    const wTasks = shiftMap[w.id] || [];
     const done = wTasks.filter(t=>t.done).length;
     const col = COLORS[wi % COLORS.length];
     const initials = w.name.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
@@ -834,6 +863,9 @@ function renderWorkers() {
       </div>
     </div>`;
   }).join('');
+  // Show shift context label in tasks header
+  const titleEl = document.getElementById('shiftContextLabel');
+  if (titleEl) titleEl.textContent = shiftLabel;
 }
 
 function shortTag(sec) {
@@ -854,21 +886,24 @@ function submitTask(wid) {
 }
 
 function addTask(wid, text, tag) {
-  if (!S.tasks[wid]) S.tasks[wid] = [];
-  S.tasks[wid].push({ id: Date.now() + Math.random().toString(36).slice(2), text, tag, done: false });
+  const m = currentTasks();
+  if (!m[wid]) m[wid] = [];
+  m[wid].push({ id: Date.now() + Math.random().toString(36).slice(2), text, tag, done: false });
   save();
   renderWorkers();
 }
 
 function toggleTask(wid, tid) {
-  const tasks = S.tasks[wid] || [];
+  const m = currentTasks();
+  const tasks = m[wid] || [];
   const t = tasks.find(x => x.id === tid);
   if (t) { t.done = !t.done; save(); renderWorkers(); }
 }
 
 function deleteTask(wid, tid) {
   requireAuth(() => {
-    S.tasks[wid] = (S.tasks[wid]||[]).filter(x => x.id !== tid);
+    const m = currentTasks();
+    m[wid] = (m[wid]||[]).filter(x => x.id !== tid);
     save(); renderWorkers();
   });
 }
@@ -943,8 +978,9 @@ function removeWorker(wid) {
 
 function clearAll() {
   requireAuth(() => {
-    if (!confirm('Καθαρισμός όλων των εργασιών (οι εργαζόμενοι παραμένουν);')) return;
-    S.tasks = {};
+    if (!confirm('Καθαρισμός εργασιών για αυτή τη βάρδια (οι εργαζόμενοι παραμένουν);')) return;
+    const k = currentShiftKey();
+    S.shiftTasks[k] = {};
     save(); renderWorkers();
   });
 }
@@ -976,8 +1012,8 @@ function renderTabs() {
   else { tag.classList.remove('show'); tag.textContent=''; }
 }
 
-function selDay(d) { S.day=d; renderTabs(); renderMenu(); document.getElementById('searchBox').value=''; searchQuery=''; }
-function selSvc(s) { S.service=s; renderTabs(); renderMenu(); document.getElementById('searchBox').value=''; searchQuery=''; }
+function selDay(d) { S.day=d; renderTabs(); renderMenu(); renderWorkers(); document.getElementById('searchBox').value=''; searchQuery=''; }
+function selSvc(s) { S.service=s; renderTabs(); renderMenu(); renderWorkers(); document.getElementById('searchBox').value=''; searchQuery=''; }
 
 /* ══ INIT ══ */
 load();
