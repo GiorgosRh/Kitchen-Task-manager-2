@@ -415,6 +415,8 @@ body {
   </div>
   <div class="header-actions">
     <span id="syncBadge" class="sync-badge"></span>
+    <span id="lastUpdated" style="font-size:0.68rem;color:rgba(255,255,255,0.35);white-space:nowrap;"></span>
+    <button class="btn-sm btn-outline" onclick="manualRefresh()" title="Ανανέωση" style="padding:5px 10px;font-size:0.8rem;">↻</button>
     <button class="btn-sm btn-outline" onclick="window.print()">🖨 Εκτύπωση</button>
     <button class="btn-sm btn-outline" onclick="clearAll()">↺ Καθαρισμός</button>
     <a href="overview.html" class="btn-sm btn-outline" style="text-decoration:none;">📊 Επισκόπηση</a>
@@ -729,6 +731,50 @@ function setSyncStatus(status) {
   el.className = 'sync-badge ' + status;
 }
 
+let _autoRefreshInterval = null;
+
+function updateLastUpdated() {
+  const el = document.getElementById('lastUpdated');
+  if (el) {
+    const now = new Date();
+    const t = now.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    el.textContent = 'Οργάνωση: ' + t;
+  }
+}
+
+function fetchFromServer(silent) {
+  if (!silent) setSyncStatus('syncing');
+  return fetch(API_BASE + '/api/kitchen')
+    .then(r => r.json())
+    .then(data => {
+      let changed = false;
+      if (data.workers && data.workers.length) {
+        const newW = JSON.stringify(data.workers);
+        if (newW !== JSON.stringify(S.workers)) { S.workers = data.workers; changed = true; }
+      }
+      if (data.shiftTasks && Object.keys(data.shiftTasks).length) {
+        const newT = JSON.stringify(data.shiftTasks);
+        if (newT !== JSON.stringify(S.shiftTasks)) { S.shiftTasks = data.shiftTasks; changed = true; }
+      }
+      if (changed) {
+        localStorage.setItem(KEY, JSON.stringify({workers:S.workers, shiftTasks:S.shiftTasks}));
+        renderTabs(); renderMenu(); renderWorkers();
+      }
+      updateLastUpdated();
+      setSyncStatus('synced');
+    })
+    .catch(() => setSyncStatus('offline'));
+}
+
+function manualRefresh() {
+  fetchFromServer(false);
+}
+
+function startAutoRefresh() {
+  if (_autoRefreshInterval) clearInterval(_autoRefreshInterval);
+  _autoRefreshInterval = setInterval(() => fetchFromServer(true), 15000);
+}
+
 function load() {
   // Load from localStorage first (instant)
   try {
@@ -743,18 +789,10 @@ function load() {
   } catch(e){}
   const today = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
   S.day = today;
-  // Then pull from server (async)
-  setSyncStatus('syncing');
-  fetch(API_BASE + '/api/kitchen')
-    .then(r => r.json())
-    .then(data => {
-      if (data.workers && data.workers.length) S.workers = data.workers;
-      if (data.shiftTasks && Object.keys(data.shiftTasks).length) S.shiftTasks = data.shiftTasks;
-      localStorage.setItem(KEY, JSON.stringify({workers:S.workers, shiftTasks:S.shiftTasks}));
-      renderTabs(); renderMenu(); renderWorkers();
-      setSyncStatus('synced');
-    })
-    .catch(() => setSyncStatus('offline'));
+  // Pull from server (async)
+  fetchFromServer(false);
+  // Start auto-refresh every 15 seconds
+  startAutoRefresh();
 }
 
 function save() {
