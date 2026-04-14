@@ -883,16 +883,42 @@ function load() {
   startAutoRefresh();
 }
 
+function siteToAppFormat() {
+  // Convert site format {day_shift: {wid: [tasks]}} → app format {shift-day: [{id,name,initials,tasks}]}
+  const appShiftTasks = {};
+  S.workers.forEach(w => {
+    const initials = w.name.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
+    for (const [siteKey, taskMap] of Object.entries(S.shiftTasks)) {
+      // siteKey = "mon_breakfast" → appKey = "breakfast-mon"
+      const under = siteKey.indexOf('_');
+      if (under < 0) continue;
+      const day = siteKey.slice(0, under);
+      const shift = siteKey.slice(under + 1);
+      const appKey = shift + '-' + day;
+      if (!appShiftTasks[appKey]) appShiftTasks[appKey] = [];
+      // Avoid duplicate worker entries
+      if (!appShiftTasks[appKey].find(x => x.id === w.id)) {
+        appShiftTasks[appKey].push({
+          id: w.id, name: w.name, initials,
+          tasks: (taskMap[w.id] || []).map(t => ({ id: t.id, text: t.text, tag: t.tag || '', done: !!t.done }))
+        });
+      }
+    }
+  });
+  return appShiftTasks;
+}
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify({workers:S.workers, shiftTasks:S.shiftTasks})); } catch(e){}
   // Debounce push to server (500ms)
   clearTimeout(syncTimer);
   syncTimer = setTimeout(() => {
     setSyncStatus('syncing');
+    // Convert site format to app format before sending to server
+    const appShiftTasks = siteToAppFormat();
     fetch(API_BASE + '/api/kitchen', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({workers:S.workers, shiftTasks:S.shiftTasks})
+      body: JSON.stringify({workers: S.workers, shiftTasks: appShiftTasks})
     })
     .then(r => r.json())
     .then(() => setSyncStatus('synced'))
