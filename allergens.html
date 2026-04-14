@@ -351,8 +351,8 @@ tbody tr.hidden-row { display: none; }
   <div class="header-right">
     <a href="index.html" class="btn btn-ghost" style="text-decoration:none;">← Πίσω</a>
     <button class="btn btn-ghost btn-reset" onclick="resetToDefaults()">↺ Reset</button>
-    <button class="btn btn-ghost" onclick="printAllergens()">🖨️ Εκτύπωση</button>
-    <button class="btn btn-ghost" onclick="downloadPdf()" title="Λήψη PDF">📄 PDF</button>
+    <button class="btn btn-ghost" onclick="openPrintSelector('print')">🖨️ Εκτύπωση</button>
+    <button class="btn btn-ghost" onclick="openPrintSelector('pdf')" title="Λήψη PDF">📄 PDF</button>
     <button class="btn btn-ghost" id="changePinBtn" onclick="openChangePinModal()" title="Αλλαγή κωδικού admin" style="display:none">🔑 PIN</button>
     <button class="btn btn-ghost" id="auditLogBtn" onclick="openAuditLog()" title="Ιστορικό αλλαγών αλλεργιογόνων" style="display:none">📜 Ιστορικό</button>
     <button class="btn-theme" id="themeBtn" onclick="toggleTheme()" title="Εναλλαγή θέματος">🌙</button>
@@ -1730,13 +1730,40 @@ function printAllergens() {
   var ph = document.createElement('div');
   ph.id = '_print_header';
   ph.className = 'print-header';
-  ph.innerHTML = '<div style="font-size:1.3rem;font-weight:800;color:#b8860b;">\u2600\ufe0f Helios &amp; Ella \u2014 \u0391\u03bb\u03bb\u03b5\u03c1\u03b3\u03b9\u03bf\u03b3\u03cc\u03bd\u03b1</div>'
-    + '<div style="font-size:0.85rem;color:#555;margin-top:4px;">' + statsText + (searchVal ? ' \u00b7 \u0391\u03bd\u03b1\u03b6\u03ae\u03c4\u03b7\u03c3\u03b7: \u00ab' + searchVal + '\u00bb' : '') + '</div>'
-    + '<div style="font-size:0.75rem;color:#888;margin-top:2px;">EU Regulation 1169/2011 \u00b7 \u0395\u03ba\u03c4\u03c5\u03c0\u03ce\u03b8\u03b7\u03ba\u03b5 ' + date + '</div>';
+  // Build allergen filter note for header
+  var allergenNote = '';
+  if (PRINT_SELECTED_ALLERGENS && PRINT_SELECTED_ALLERGENS.length < 14) {
+    var selLabels = ALLERGENS.filter(function(a) { return PRINT_SELECTED_ALLERGENS.indexOf(a.key) !== -1; }).map(function(a) { return a.ico + ' ' + a.label; });
+    allergenNote = ' · Αλλεργιογόνα: ' + selLabels.join(', ');
+  }
+  ph.innerHTML = '<div style="font-size:1.3rem;font-weight:800;color:#b8860b;">☀️ Helios &amp; Ella — Αλλεργιογόνα</div>'
+    + '<div style="font-size:0.85rem;color:#555;margin-top:4px;">' + statsText + (searchVal ? ' · Αναζήτηση: «' + searchVal + '»' : '') + allergenNote + '</div>'
+    + '<div style="font-size:0.75rem;color:#888;margin-top:2px;">EU Regulation 1169/2011 · Εκτυπώθηκε ' + date + '</div>';
   var main = document.querySelector('.main');
   if (main) main.insertBefore(ph, main.firstChild);
+  // Hide non-selected allergen columns in table view
+  var hiddenStyle = document.getElementById('_print_col_hide');
+  if (hiddenStyle) hiddenStyle.remove();
+  if (PRINT_SELECTED_ALLERGENS && PRINT_SELECTED_ALLERGENS.length < 14) {
+    var css = '';
+    ALLERGENS.forEach(function(a, i) {
+      if (PRINT_SELECTED_ALLERGENS.indexOf(a.key) === -1) {
+        // column index: 0 = dish name, 1..14 = allergens
+        var colIdx = i + 2; // nth-child is 1-based, dish=1, allergens start at 2
+        css += '@media print { table th:nth-child(' + colIdx + '), table td:nth-child(' + colIdx + ') { display: none !important; } }';
+      }
+    });
+    var styleEl = document.createElement('style');
+    styleEl.id = '_print_col_hide';
+    styleEl.textContent = css;
+    document.head.appendChild(styleEl);
+  }
   window.print();
-  setTimeout(function() { var el = document.getElementById('_print_header'); if (el) el.remove(); }, 2000);
+  setTimeout(function() {
+    var el = document.getElementById('_print_header'); if (el) el.remove();
+    var s = document.getElementById('_print_col_hide'); if (s) s.remove();
+    PRINT_SELECTED_ALLERGENS = null;
+  }, 2000);
 }
 
 function downloadPdf() {
@@ -1762,7 +1789,9 @@ function downloadPdf() {
     var name = dish[0];
     var category = dish[1];
     var allergensObj = dish[2] || {};
-    var activeKeys = Object.keys(allergensObj).filter(function(k) { return allergensObj[k]; });
+    var activeKeys = Object.keys(allergensObj).filter(function(k) {
+      return allergensObj[k] && (!PRINT_SELECTED_ALLERGENS || PRINT_SELECTED_ALLERGENS.indexOf(k) !== -1);
+    });
     var badges = activeKeys.length > 0
       ? activeKeys.map(function(k) {
           var c = ALLERGEN_COLORS[k] || '#888';
@@ -1773,25 +1802,94 @@ function downloadPdf() {
       : '<span style="color:#9ca3af;font-size:10px;font-style:italic;">Χωρίς αλλεργιογόνα</span>';
     return '<tr><td style="padding:7px 10px;border-bottom:1px solid #e5e7eb;vertical-align:top;"><div style="font-weight:600;font-size:12px;">' + name + '</div><div style="font-size:10px;color:#6b7280;margin-top:2px;">' + category + '</div></td><td style="padding:7px 10px;border-bottom:1px solid #e5e7eb;vertical-align:middle;">' + badges + '</td></tr>';
   }).join('');
+  // Build allergen filter note for PDF header
+  var pdfAllergenNote = '';
+  if (PRINT_SELECTED_ALLERGENS && PRINT_SELECTED_ALLERGENS.length < 14) {
+    var pdfSelLabels = ALLERGENS.filter(function(a) { return PRINT_SELECTED_ALLERGENS.indexOf(a.key) !== -1; }).map(function(a) { return a.ico + ' ' + a.label; });
+    pdfAllergenNote = '<div class="sub" style="margin-top:4px;font-size:10px;color:#b8860b;">Αλλεργιογόνα: ' + pdfSelLabels.join(' · ') + '</div>';
+  }
   var html = '<!DOCTYPE html><html lang="el"><head><meta charset="UTF-8"/><title>Allergens - Helios &amp; Ella</title>'
     + '<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:-apple-system,Helvetica,Arial,sans-serif;background:#fff;color:#1a1a1a;padding:24px;}'
     + '.hdr{border-bottom:3px solid #b8860b;padding-bottom:14px;margin-bottom:20px;}.brand{font-size:20px;font-weight:800;color:#b8860b;}.sub{font-size:12px;color:#6b7280;margin-top:4px;}'
     + 'table{width:100%;border-collapse:collapse;}thead th{background:#f9f5ec;padding:8px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;text-align:left;border-bottom:2px solid #e5e7eb;}'
     + '.footer{margin-top:20px;font-size:10px;color:#9ca3af;text-align:center;border-top:1px solid #e5e7eb;padding-top:10px;}'
     + '@page{margin:15mm;}@media print{body{padding:0;}}</style></head><body>'
-    + '<div class="hdr"><div class="brand">\u2600\ufe0f Helios &amp; Ella \u2014 \u0391\u03bb\u03bb\u03b5\u03c1\u03b3\u03b9\u03bf\u03b3\u03cc\u03bd\u03b1</div>'
-    + '<div class="sub">EU Regulation 1169/2011 \u00b7 ' + visible.length + ' \u03c0\u03b9\u03ac\u03c4\u03b1</div>'
+    + '<div class="hdr"><div class="brand">☀️ Helios &amp; Ella — Αλλεργιογόνα</div>'
+    + '<div class="sub">EU Regulation 1169/2011 · ' + visible.length + ' πιάτα</div>'
+    + pdfAllergenNote
     + '<div class="sub" style="margin-top:2px;font-size:10px;color:#9ca3af;">' + date + '</div></div>'
-    + '<table><thead><tr><th style="width:42%">\u03a0\u03b9\u03ac\u03c4\u03bf</th><th>\u0391\u03bb\u03bb\u03b5\u03c1\u03b3\u03b9\u03bf\u03b3\u03cc\u03bd\u03b1</th></tr></thead><tbody>' + rows + '</tbody></table>'
-    + '<div class="footer">Helios &amp; Ella Kitchen Manager \u00b7 \u0395\u03ba\u03c4\u03c5\u03c0\u03ce\u03b8\u03b7\u03ba\u03b5 ' + date + '</div></body></html>';
+    + '<table><thead><tr><th style="width:42%">Πιάτο</th><th>Αλλεργιογόνα</th></tr></thead><tbody>' + rows + '</tbody></table>'
+    + '<div class="footer">Helios &amp; Ella Kitchen Manager · Εκτυπώθηκε ' + date + '</div></body></html>';
   var win = window.open('', '_blank');
   if (win) {
     win.document.write(html);
     win.document.close();
     win.focus();
-    setTimeout(function() { win.print(); }, 400);
+    setTimeout(function() { win.print(); PRINT_SELECTED_ALLERGENS = null; }, 400);
   } else {
-    alert('\u0395\u03bd\u03b5\u03c1\u03b3\u03bf\u03c0\u03bf\u03b9\u03ae\u03c3\u03c4\u03b5 \u03c4\u03b1 pop-ups \u03b3\u03b9\u03b1 \u03b1\u03c5\u03c4\u03ae \u03c4\u03b7\u03bd \u03c3\u03b5\u03bb\u03af\u03b4\u03b1 \u03b3\u03b9\u03b1 \u03bd\u03b1 \u03ba\u03b1\u03c4\u03b5\u03b2\u03ac\u03c3\u03b5\u03c4\u03b5 \u03c4\u03bf PDF.');
+    alert('Ενεργοποιήστε τα pop-ups για αυτή την σελίδα για να κατεβάσετε το PDF.');
+    PRINT_SELECTED_ALLERGENS = null;
+  }
+}
+
+/* ══ PRINT SELECTOR ══ */
+var PRINT_SELECTED_ALLERGENS = null; // null = all, array = selected keys
+
+function openPrintSelector(mode) {
+  var modal = document.getElementById('printSelectorModal');
+  modal.dataset.mode = mode;
+  // Reset checkboxes to all checked
+  ALLERGENS.forEach(function(a) {
+    var cb = document.getElementById('pscb_' + a.key);
+    if (cb) cb.checked = true;
+  });
+  updatePrintSelectorCount();
+  modal.style.display = 'flex';
+}
+
+function closePrintSelector() {
+  document.getElementById('printSelectorModal').style.display = 'none';
+}
+
+function updatePrintSelectorCount() {
+  var checked = ALLERGENS.filter(function(a) {
+    var cb = document.getElementById('pscb_' + a.key);
+    return cb && cb.checked;
+  }).length;
+  var el = document.getElementById('printSelectorCount');
+  if (el) el.textContent = checked + ' / 14 επιλεγμένα';
+  var btn = document.getElementById('printSelectorConfirmBtn');
+  if (btn) btn.disabled = checked === 0;
+}
+
+function selectAllPrintAllergens() {
+  ALLERGENS.forEach(function(a) {
+    var cb = document.getElementById('pscb_' + a.key);
+    if (cb) cb.checked = true;
+  });
+  updatePrintSelectorCount();
+}
+
+function clearAllPrintAllergens() {
+  ALLERGENS.forEach(function(a) {
+    var cb = document.getElementById('pscb_' + a.key);
+    if (cb) cb.checked = false;
+  });
+  updatePrintSelectorCount();
+}
+
+function confirmPrintSelector() {
+  var mode = document.getElementById('printSelectorModal').dataset.mode;
+  var selected = ALLERGENS.filter(function(a) {
+    var cb = document.getElementById('pscb_' + a.key);
+    return cb && cb.checked;
+  }).map(function(a) { return a.key; });
+  PRINT_SELECTED_ALLERGENS = selected.length === 14 ? null : selected;
+  closePrintSelector();
+  if (mode === 'pdf') {
+    downloadPdf();
+  } else {
+    printAllergens();
   }
 }
 
@@ -1804,6 +1902,45 @@ updateStats(DISH_STATE.length);
 loadAdminPinFromServer();
 // Then load overrides (async)
 loadDishState();
+</script>
+
+<!-- Print Selector Modal -->
+<div id="printSelectorModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--white);">🖨️ Επιλογή Αλλεργιογόνων</div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:3px;">Επίλεξε ποια αλλεργιογόνα θα εμφανιστούν στην εκτύπωση</div>
+      </div>
+      <button onclick="closePrintSelector()" style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px;line-height:1;">✕</button>
+    </div>
+    <!-- Quick actions -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button onclick="selectAllPrintAllergens()" style="font-family:'Outfit',sans-serif;font-size:0.75rem;font-weight:600;padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;">✓ Όλα</button>
+      <button onclick="clearAllPrintAllergens()" style="font-family:'Outfit',sans-serif;font-size:0.75rem;font-weight:600;padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;">✕ Κανένα</button>
+      <span id="printSelectorCount" style="margin-left:auto;font-size:0.75rem;color:var(--muted);align-self:center;">14 / 14 επιλεγμένα</span>
+    </div>
+    <!-- Allergen checkboxes -->
+    <div id="printSelectorGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;"></div>
+    <!-- Confirm button -->
+    <button id="printSelectorConfirmBtn" onclick="confirmPrintSelector()" style="width:100%;font-family:'Outfit',sans-serif;font-size:0.9rem;font-weight:700;padding:12px;border-radius:10px;border:none;background:#ef4444;color:white;cursor:pointer;">Εκτύπωση →</button>
+  </div>
+</div>
+
+<script>
+// Build print selector checkboxes dynamically
+(function() {
+  var grid = document.getElementById('printSelectorGrid');
+  if (!grid) return;
+  ALLERGENS.forEach(function(a) {
+    var item = document.createElement('label');
+    item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;transition:border-color 0.15s;';
+    item.innerHTML = '<input type="checkbox" id="pscb_' + a.key + '" checked onchange="updatePrintSelectorCount()" style="width:15px;height:15px;accent-color:' + a.color + ';cursor:pointer;">'
+      + '<span style="font-size:1rem;">' + a.ico + '</span>'
+      + '<span style="font-size:0.78rem;font-weight:600;color:var(--text);">' + a.label + '</span>';
+    grid.appendChild(item);
+  });
+})();
 </script>
 </body>
 </html>
