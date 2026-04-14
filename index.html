@@ -220,6 +220,29 @@ body {
   box-shadow: var(--shadow);
   overflow: hidden;
   border: 1.5px solid var(--line);
+  cursor: pointer;
+  transition: outline 0.12s, box-shadow 0.12s;
+}
+.worker-card.print-selected {
+  outline: 3px solid var(--gold);
+  box-shadow: 0 0 0 4px rgba(184,134,11,0.18);
+}
+.print-select-hint {
+  font-size: 0.72rem; color: var(--grey); margin-top: 4px;
+  font-style: italic;
+}
+.print-clear-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem; font-weight: 600;
+  color: var(--terra); background: none;
+  border: 1px solid var(--terra); border-radius: 6px;
+  padding: 3px 9px; cursor: pointer; margin-left: 8px;
+  display: none;
+}
+.print-clear-btn.visible { display: inline-block; }
+.print-selection-bar {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px; flex-wrap: wrap;
 }
 
 .worker-card-header {
@@ -393,8 +416,10 @@ body {
   .layout { display: block; height: auto; }
   .tasks-panel { padding: 0; }
   .workers-grid { grid-template-columns: repeat(2, 1fr); }
-  .worker-card { page-break-inside: avoid; }
-  .add-task-row, .task-del, .remove-worker-btn, .add-worker-btn, .tasks-header button, .worker-progress-text { display: none; }
+  .worker-card { page-break-inside: avoid; cursor: default; outline: none !important; box-shadow: var(--shadow) !important; }
+  .add-task-row, .task-del, .remove-worker-btn, .add-worker-btn, .tasks-header button, .worker-progress-text, .print-selection-bar { display: none; }
+  /* Hide unselected cards only when at least one card is selected */
+  .has-print-selection .worker-card:not(.print-selected) { display: none; }
 }
 
 @media (max-width: 800px) {
@@ -488,6 +513,10 @@ body {
         <div id="shiftContextLabel" style="font-size:0.75rem;color:var(--gold);margin-top:2px;font-style:italic;"></div>
       </div>
       <button class="add-worker-btn" onclick="openAddWorker()">+ Προσθήκη Ατόμου</button>
+    </div>
+    <div class="print-selection-bar" id="printSelectionBar">
+      <span class="print-select-hint">🖨️ Κλικ σε κάρτα για επιλογή εκτύπωσης</span>
+      <button class="print-clear-btn" id="printClearBtn" onclick="clearPrintSelection()">✕ Καθαρισμός επιλογής</button>
     </div>
     <div class="workers-grid" id="workersGrid"></div>
   </div>
@@ -926,6 +955,45 @@ function save() {
   }, 500);
 }
 
+/* ══ PRINT SELECTION ══ */
+let printSelectedWorkers = new Set();
+
+function togglePrintSelect(wid, event) {
+  // Don't toggle if clicking on interactive elements inside the card
+  const tag = event.target.tagName;
+  if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'LABEL') return;
+  if (event.target.classList.contains('task-check') || event.target.classList.contains('task-del')) return;
+
+  const card = document.getElementById('wcard-' + wid);
+  if (!card) return;
+  if (printSelectedWorkers.has(wid)) {
+    printSelectedWorkers.delete(wid);
+    card.classList.remove('print-selected');
+  } else {
+    printSelectedWorkers.add(wid);
+    card.classList.add('print-selected');
+  }
+  updatePrintSelectionUI();
+}
+
+function clearPrintSelection() {
+  printSelectedWorkers.clear();
+  document.querySelectorAll('.worker-card.print-selected').forEach(c => c.classList.remove('print-selected'));
+  updatePrintSelectionUI();
+}
+
+function updatePrintSelectionUI() {
+  const count = printSelectedWorkers.size;
+  const clearBtn = document.getElementById('printClearBtn');
+  const grid = document.getElementById('workersGrid');
+  const hint = document.querySelector('.print-select-hint');
+  if (clearBtn) clearBtn.classList.toggle('visible', count > 0);
+  if (grid) grid.classList.toggle('has-print-selection', count > 0);
+  if (hint) hint.textContent = count > 0
+    ? `🖨️ ${count} κάρτ${count === 1 ? 'α' : 'ες'} επιλεγμέν${count === 1 ? 'η' : 'ες'} — εκτύπωση μόνο αυτών`
+    : '🖨️ Κλικ σε κάρτα για επιλογή εκτύπωσης';
+}
+
 /* ══ AUTH ══ */
 let ADMIN_PIN = null; // loaded from server
 let isAuthenticated = false;
@@ -1055,7 +1123,7 @@ function renderWorkers() {
         </div>`).join('')
       : `<div style="padding:10px 4px;color:#bbb;font-size:0.8rem;font-style:italic">Καμία εργασία ακόμα</div>`;
 
-    return `<div class="worker-card">
+    return `<div class="worker-card" id="wcard-${w.id}" onclick="togglePrintSelect('${w.id}',event)">
       <div class="worker-card-header ${col}">
         <div class="worker-name">
           <div class="worker-avatar">${initials}</div>
@@ -1079,6 +1147,13 @@ function renderWorkers() {
   // Show shift context label in tasks header
   const titleEl = document.getElementById('shiftContextLabel');
   if (titleEl) titleEl.textContent = shiftLabel;
+  // Restore print selection state after re-render
+  printSelectedWorkers.forEach(wid => {
+    const card = document.getElementById('wcard-' + wid);
+    if (card) card.classList.add('print-selected');
+    else printSelectedWorkers.delete(wid); // worker no longer exists
+  });
+  updatePrintSelectionUI();
 }
 
 function shortTag(sec) {
